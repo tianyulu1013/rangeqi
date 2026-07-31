@@ -134,7 +134,14 @@ const PIECES: Record<
   },
 };
 
-const PIECE_TYPES = Object.keys(PIECES) as PieceType[];
+const PIECE_TYPES: PieceType[] = [
+  "guard",
+  "scout",
+  "archer",
+  "cannon",
+  "knight",
+  "fortress",
+];
 const PIECE_ICONS: Record<
   Exclude<PieceType, "scout" | "archer" | "fortress">,
   IconType
@@ -555,7 +562,7 @@ export default function Home() {
   const [firstChoice, setFirstChoice] = useState<FirstChoice>("random");
   const [humanPlayer, setHumanPlayer] = useState<Player>("blue");
   const [currentPlayer, setCurrentPlayer] = useState<Player>("red");
-  const [selectedType, setSelectedType] = useState<PieceType>("scout");
+  const [selectedType, setSelectedType] = useState<PieceType>("guard");
   const [phase, setPhase] = useState<Phase>("placement");
   const [hoverCell, setHoverCell] = useState<[number, number] | null>(null);
   const [previewCell, setPreviewCell] = useState<[number, number] | null>(null);
@@ -846,7 +853,7 @@ export default function Home() {
     }
     setPieces([]);
     setCurrentPlayer("red");
-    setSelectedType("scout");
+    setSelectedType("guard");
     setPhase("placement");
     setHoverCell(null);
     setPreviewCell(null);
@@ -1447,8 +1454,8 @@ function RangeIcon({ type }: { type: PieceType }) {
 
 function Rulebook({ onBack }: { onBack: () => void }) {
   const pieceRules: { type: PieceType; rule: string }[] = [
-    { type: "scout", rule: "控制斜向相邻的 4 格" },
     { type: "guard", rule: "控制上下左右相邻的 4 格" },
+    { type: "scout", rule: "控制斜向相邻的 4 格" },
     { type: "archer", rule: "控制上下左右正好相距 2 格的位置" },
     {
       type: "cannon",
