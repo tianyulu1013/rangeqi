@@ -12,6 +12,8 @@ type Phase = "placement" | "ready" | "settling" | "finished";
 type GameMode = "ai" | "local";
 type ColorTheme = "standard" | "vivid" | "accessible";
 type AiStyle = "balanced" | "aggressive" | "defensive" | "territorial";
+type FirstChoice = Player | "random";
+type PieceDisplay = "mark" | "range";
 
 type Piece = {
   id: number;
@@ -316,8 +318,27 @@ function chooseAiMove(
   return best;
 }
 
+function chooseRandomAiOpening(inventory: Record<PieceType, number>) {
+  const piecePool = PIECE_TYPES.flatMap((type) =>
+    Array.from({ length: inventory[type] }, () => type),
+  );
+  const type = piecePool[Math.floor(Math.random() * piecePool.length)];
+  if (!type) return null;
+  return {
+    type,
+    row: Math.floor(Math.random() * BOARD_SIZE),
+    col: Math.floor(Math.random() * BOARD_SIZE),
+  };
+}
+
+function resolveFirstPlayer(choice: FirstChoice): Player {
+  if (choice !== "random") return choice;
+  return Math.random() < 0.5 ? "blue" : "red";
+}
+
 export default function Home() {
   const [pieces, setPieces] = useState<Piece[]>([]);
+  const [firstChoice, setFirstChoice] = useState<FirstChoice>("blue");
   const [firstPlayer, setFirstPlayer] = useState<Player>("blue");
   const [currentPlayer, setCurrentPlayer] = useState<Player>("blue");
   const [selectedType, setSelectedType] = useState<PieceType>("scout");
@@ -332,6 +353,7 @@ export default function Home() {
   const [colorTheme, setColorTheme] = useState<ColorTheme>("standard");
   const [aiStyle, setAiStyle] = useState<AiStyle>("balanced");
   const [showResult, setShowResult] = useState(false);
+  const [pieceDisplay, setPieceDisplay] = useState<PieceDisplay>("mark");
 
   const stats = useMemo(() => getStats(pieces), [pieces]);
   const boardPieces = useMemo(
@@ -403,12 +425,15 @@ export default function Home() {
 
     setAiThinking(true);
     const timer = window.setTimeout(() => {
-      const move = chooseAiMove(
-        pieces,
-        inventory.red,
-        inventory.blue,
-        aiStyle,
-      );
+      const move =
+        pieces.length === 0
+          ? chooseRandomAiOpening(inventory.red)
+          : chooseAiMove(
+              pieces,
+              inventory.red,
+              inventory.blue,
+              aiStyle,
+            );
       if (!move) {
         setAiThinking(false);
         return;
@@ -572,15 +597,21 @@ export default function Home() {
   }
 
   function reset() {
-    resetTo(firstPlayer);
+    const nextFirst = resolveFirstPlayer(firstChoice);
+    setFirstPlayer(nextFirst);
+    resetTo(nextFirst);
   }
 
   function changeMode(nextMode: GameMode) {
     setMode(nextMode);
-    resetTo(firstPlayer);
+    const nextFirst = resolveFirstPlayer(firstChoice);
+    setFirstPlayer(nextFirst);
+    resetTo(nextFirst);
   }
 
-  function changeFirstPlayer(nextPlayer: Player) {
+  function changeFirstPlayer(nextChoice: FirstChoice) {
+    const nextPlayer = resolveFirstPlayer(nextChoice);
+    setFirstChoice(nextChoice);
     setFirstPlayer(nextPlayer);
     resetTo(nextPlayer);
   }
@@ -646,16 +677,22 @@ export default function Home() {
           </div>
           <div className="mode-switch first-switch" aria-label="选择先手">
             <button
-              className={firstPlayer === "blue" ? "selected" : ""}
+              className={firstChoice === "blue" ? "selected" : ""}
               onClick={() => changeFirstPlayer("blue")}
             >
               {mode === "ai" ? "我先手" : "青方先"}
             </button>
             <button
-              className={firstPlayer === "red" ? "selected" : ""}
+              className={firstChoice === "red" ? "selected" : ""}
               onClick={() => changeFirstPlayer("red")}
             >
               {mode === "ai" ? "AI 先手" : "赤方先"}
+            </button>
+            <button
+              className={firstChoice === "random" ? "selected" : ""}
+              onClick={() => changeFirstPlayer("random")}
+            >
+              随机
             </button>
           </div>
           <button className="quiet-button" onClick={reset}>
@@ -681,6 +718,7 @@ export default function Home() {
             selectedType={selectedType}
             phase={phase}
             isComputer={mode === "ai"}
+            pieceDisplay={pieceDisplay}
             onChoose={chooseType}
           />
           {mode === "ai" && (
@@ -770,7 +808,13 @@ export default function Home() {
                       <span
                         className={`piece ${piece.player} ${isPending ? "pending" : ""}`}
                       >
-                        <span className="piece-mark">{PIECES[piece.type].mark}</span>
+                        {pieceDisplay === "mark" ? (
+                          <span className="piece-mark">
+                            {PIECES[piece.type].mark}
+                          </span>
+                        ) : (
+                          <RangeIcon type={piece.type} />
+                        )}
                         {pieceStats && (
                           <span
                             className={`danger-badge ${pieceStats.danger > 0 ? "unsafe" : "safe"}`}
@@ -830,6 +874,21 @@ export default function Home() {
               </button>
             ))}
           </div>
+          <div className="palette-picker piece-display-picker" aria-label="棋子显示">
+            <span>棋子显示</span>
+            <button
+              className={pieceDisplay === "mark" ? "selected" : ""}
+              onClick={() => setPieceDisplay("mark")}
+            >
+              文字
+            </button>
+            <button
+              className={pieceDisplay === "range" ? "selected" : ""}
+              onClick={() => setPieceDisplay("range")}
+            >
+              范围图
+            </button>
+          </div>
         </div>
 
         <aside className={`player-panel blue-panel ${currentPlayer === "blue" && phase === "placement" ? "active" : ""}`}>
@@ -851,6 +910,7 @@ export default function Home() {
             selectedType={selectedType}
             phase={phase}
             isComputer={false}
+            pieceDisplay={pieceDisplay}
             onChoose={chooseType}
           />
         </aside>
@@ -863,7 +923,11 @@ export default function Home() {
             <>
               <div className="inspect-title">
                 <span className={`mini-piece ${inspected.player}`}>
-                  {PIECES[inspected.type].mark}
+                  {pieceDisplay === "mark" ? (
+                    PIECES[inspected.type].mark
+                  ) : (
+                    <RangeIcon type={inspected.type} />
+                  )}
                 </span>
                 <div>
                   <h3>
@@ -960,6 +1024,33 @@ export default function Home() {
   );
 }
 
+function RangeIcon({ type }: { type: PieceType }) {
+  const targets = new Set(
+    PIECES[type].offsets.map(([row, col]) => cellKey(row + 2, col + 2)),
+  );
+  return (
+    <span className="range-icon" aria-hidden="true">
+      {Array.from({ length: 25 }, (_, index) => {
+        const row = Math.floor(index / 5);
+        const col = index % 5;
+        const isOrigin = row === 2 && col === 2;
+        return (
+          <i
+            key={index}
+            className={[
+              "range-dot",
+              isOrigin ? "origin" : "",
+              targets.has(cellKey(row, col)) ? "target" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          />
+        );
+      })}
+    </span>
+  );
+}
+
 function Inventory({
   player,
   currentPlayer,
@@ -967,6 +1058,7 @@ function Inventory({
   selectedType,
   phase,
   isComputer,
+  pieceDisplay,
   onChoose,
 }: {
   player: Player;
@@ -975,6 +1067,7 @@ function Inventory({
   selectedType: PieceType;
   phase: Phase;
   isComputer: boolean;
+  pieceDisplay: PieceDisplay;
   onChoose: (type: PieceType) => void;
 }) {
   return (
@@ -994,7 +1087,13 @@ function Inventory({
             onClick={() => onChoose(type)}
             aria-label={`${PLAYER_NAMES[player]}选择${definition.name}，剩余 ${inventory[type]} 枚`}
           >
-            <span className={`mini-piece ${player}`}>{definition.mark}</span>
+            <span className={`mini-piece ${player}`}>
+              {pieceDisplay === "mark" ? (
+                definition.mark
+              ) : (
+                <RangeIcon type={type} />
+              )}
+            </span>
             <span className="piece-copy">
               <strong>{definition.name}</strong>
               <small>{definition.description}</small>
