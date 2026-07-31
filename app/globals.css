@@ -606,8 +606,30 @@ button {
 }
 
 .range-dot.screen {
-  background: rgba(20, 25, 24, 0.72);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  background: #f1ca63;
+  border-radius: 0;
+  box-shadow: 0 0 2px rgba(241, 202, 99, 0.65);
+  clip-path: polygon(
+    50% 0,
+    100% 52%,
+    68% 52%,
+    68% 100%,
+    32% 100%,
+    32% 52%,
+    0 52%
+  );
+}
+
+.range-dot.arrow-down {
+  transform: rotate(180deg);
+}
+
+.range-dot.arrow-left {
+  transform: rotate(-90deg);
+}
+
+.range-dot.arrow-right {
+  transform: rotate(90deg);
 }
 
 .range-dot.origin {
@@ -1019,6 +1041,15 @@ button {
 .setting-row > span {
   color: rgba(245, 238, 224, 0.66);
   font-size: 11px;
+}
+
+.setting-row > span small {
+  max-width: 180px;
+  display: block;
+  margin-top: 3px;
+  color: rgba(245, 238, 224, 0.4);
+  font-size: 9px;
+  line-height: 1.35;
 }
 
 .settings-select {

@@ -47,8 +47,8 @@ const PIECES: Record<
   }
 > = {
   scout: {
-    name: "斥候",
-    mark: "斥",
+    name: "枪兵",
+    mark: "枪",
     count: 3,
     description: "四个斜角相邻格",
     offsets: [
@@ -59,8 +59,8 @@ const PIECES: Record<
     ],
   },
   guard: {
-    name: "卫士",
-    mark: "卫",
+    name: "剑兵",
+    mark: "剑",
     count: 3,
     description: "上下左右相邻格",
     offsets: [
@@ -239,6 +239,24 @@ function countControlledCells(pieces: Piece[]) {
   return { red, blue, neutral };
 }
 
+function settleForEvaluation(pieces: Piece[]) {
+  let remaining = [...pieces];
+
+  while (remaining.length > 0) {
+    const stats = getStats(remaining);
+    const maxDanger = Math.max(
+      0,
+      ...remaining.map((piece) => stats.get(piece.id)?.danger ?? 0),
+    );
+    if (maxDanger <= 0) break;
+    remaining = remaining.filter(
+      (piece) => stats.get(piece.id)?.danger !== maxDanger,
+    );
+  }
+
+  return remaining;
+}
+
 const AI_WEIGHTS: Record<
   StrategyStyle,
   { attack: number; safety: number; support: number; territory: number }
@@ -282,6 +300,83 @@ function evaluateForRed(pieces: Piece[], style: StrategyStyle) {
   return score;
 }
 
+function getOverlap(pieces: Piece[], player: Player) {
+  let overlap = 0;
+  for (const value of getInfluence(pieces).values()) {
+    overlap += Math.max(0, value[player] - 1);
+  }
+  return overlap;
+}
+
+function getMoveStyleBonus(
+  type: PieceType,
+  before: Piece[],
+  after: Piece[],
+  style: StrategyStyle,
+) {
+  const redPlaced = before.filter((piece) => piece.player === "red").length;
+  const placed = after[after.length - 1];
+  const controlledByMove = getControlledCells(placed, after);
+  const enemiesHit = controlledByMove.filter(([row, col]) =>
+    before.some(
+      (piece) =>
+        piece.player === "blue" && piece.row === row && piece.col === col,
+    ),
+  ).length;
+  const alliesSupported = controlledByMove.filter(([row, col]) =>
+    before.some(
+      (piece) =>
+        piece.player === "red" && piece.row === row && piece.col === col,
+    ),
+  ).length;
+
+  const fortressDelay: Record<StrategyStyle, number> = {
+    balanced: 4,
+    aggressive: 2,
+    defensive: 7,
+    territorial: 5,
+  };
+  const fortressPenalty: Record<StrategyStyle, number> = {
+    balanced: 1.25,
+    aggressive: 0.7,
+    defensive: 1.8,
+    territorial: 1.15,
+  };
+  let bonus =
+    type === "fortress"
+      ? -Math.max(0, fortressDelay[style] - redPlaced) *
+        fortressPenalty[style]
+      : 0;
+
+  if (style === "aggressive") {
+    bonus += enemiesHit * 3.4 + alliesSupported * 0.15;
+    if (redPlaced < 2 && type === "archer") bonus += 2.2;
+  } else if (style === "defensive") {
+    bonus += alliesSupported * 2.6 + enemiesHit * 0.35;
+    if (redPlaced < 2 && (type === "guard" || type === "scout")) bonus += 2.3;
+  } else if (style === "territorial") {
+    const beforeControl = countControlledCells(before).red;
+    const afterControl = countControlledCells(after).red;
+    const addedControl = afterControl - beforeControl;
+    const addedOverlap = getOverlap(after, "red") - getOverlap(before, "red");
+    bonus += addedControl * 1.45 - addedOverlap * 0.85;
+    if (redPlaced < 2 && type === "knight") bonus += 1.8;
+  } else {
+    bonus += enemiesHit * 1.15 + alliesSupported * 0.85;
+    if (redPlaced < 2 && (type === "guard" || type === "scout")) bonus += 0.9;
+  }
+
+  return bonus;
+}
+
+function getResolutionScore(pieces: Piece[]) {
+  const settled = settleForEvaluation(pieces);
+  const redAlive = settled.filter((piece) => piece.player === "red").length;
+  const blueAlive = settled.length - redAlive;
+  const control = countControlledCells(settled);
+  return (redAlive - blueAlive) * 5 + (control.red - control.blue) * 0.16;
+}
+
 function chooseAiMove(
   pieces: Piece[],
   redInventory: Record<PieceType, number>,
@@ -315,7 +410,9 @@ function chooseAiMove(
           type,
           row,
           col,
-          score: evaluateForRed(imagined, style),
+          score:
+            evaluateForRed(imagined, style) +
+            getMoveStyleBonus(type, pieces, imagined, style),
         });
       }
     }
@@ -340,6 +437,7 @@ function chooseAiMove(
       cellKey(candidate.row, candidate.col),
     ]);
     let strongestBlueReply = Number.POSITIVE_INFINITY;
+    let strongestBlueReplyPosition: Piece[] | null = null;
     let hasBlueReply = false;
 
     for (const type of PIECE_TYPES) {
@@ -355,16 +453,24 @@ function chooseAiMove(
             row,
             col,
           };
-          strongestBlueReply = Math.min(
-            strongestBlueReply,
-            evaluateForRed([...afterRed, blueReply], style),
-          );
+          const replyPosition = [...afterRed, blueReply];
+          const replyScore = evaluateForRed(replyPosition, style);
+          if (replyScore < strongestBlueReply) {
+            strongestBlueReply = replyScore;
+            strongestBlueReplyPosition = replyPosition;
+          }
         }
       }
     }
 
     const lookAhead = hasBlueReply ? strongestBlueReply : candidate.score;
-    const combinedScore = candidate.score * 0.32 + lookAhead * 0.68;
+    const resolutionPosition = strongestBlueReplyPosition ?? afterRed;
+    const progress = resolutionPosition.length / (PIECES_PER_PLAYER * 2);
+    const resolutionWeight = Math.max(0, progress - 0.45) * 1.8;
+    const combinedScore =
+      candidate.score * 0.32 +
+      lookAhead * 0.68 +
+      getResolutionScore(resolutionPosition) * resolutionWeight;
     if (combinedScore > bestScore) {
       bestScore = combinedScore;
       best = candidate;
@@ -386,6 +492,13 @@ const STRATEGY_LABELS: Record<StrategyStyle, string> = {
   aggressive: "猛攻",
   defensive: "结阵",
   territorial: "控场",
+};
+
+const STRATEGY_DESCRIPTIONS: Record<StrategyStyle, string> = {
+  balanced: "兼顾威胁、互保与后期清算",
+  aggressive: "主动制造危险，较早投入强棋",
+  defensive: "先搭互保阵型，堡垒通常后放",
+  territorial: "扩大有效控制，避免范围重叠",
 };
 
 function pickRandomStrategy(): StrategyStyle {
@@ -1068,6 +1181,13 @@ export default function Home() {
                   AI 风格
                   {aiStyle === "random" &&
                     `（本局${STRATEGY_LABELS[activeAiStyle]}）`}
+                  <small>
+                    {
+                      STRATEGY_DESCRIPTIONS[
+                        aiStyle === "random" ? activeAiStyle : aiStyle
+                      ]
+                    }
+                  </small>
                 </span>
                 <select
                   className="settings-select"
@@ -1211,6 +1331,10 @@ function RangeIcon({ type }: { type: PieceType }) {
               "range-dot",
               isOrigin ? "origin" : "",
               screens.has(cellKey(row, col)) ? "screen" : "",
+              type === "cannon" && row === 1 && col === 2 ? "arrow-up" : "",
+              type === "cannon" && row === 3 && col === 2 ? "arrow-down" : "",
+              type === "cannon" && row === 2 && col === 1 ? "arrow-left" : "",
+              type === "cannon" && row === 2 && col === 3 ? "arrow-right" : "",
               targets.has(cellKey(row, col)) ? "target" : "",
             ]
               .filter(Boolean)
