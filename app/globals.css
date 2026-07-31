@@ -130,7 +130,10 @@ button {
   justify-self: end;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 10px;
+  max-width: 360px;
 }
 
 .mode-switch {
@@ -155,6 +158,10 @@ button {
   color: #151d1c;
   background: var(--gold);
   font-weight: 700;
+}
+
+.first-switch button {
+  min-width: 54px;
 }
 
 .quiet-button:hover {

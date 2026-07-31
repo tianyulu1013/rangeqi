@@ -318,6 +318,7 @@ function chooseAiMove(
 
 export default function Home() {
   const [pieces, setPieces] = useState<Piece[]>([]);
+  const [firstPlayer, setFirstPlayer] = useState<Player>("blue");
   const [currentPlayer, setCurrentPlayer] = useState<Player>("blue");
   const [selectedType, setSelectedType] = useState<PieceType>("scout");
   const [phase, setPhase] = useState<Phase>("placement");
@@ -556,9 +557,9 @@ export default function Home() {
     setPhase("placement");
   }
 
-  function reset() {
+  function resetTo(startingPlayer: Player) {
     setPieces([]);
-    setCurrentPlayer("blue");
+    setCurrentPlayer(startingPlayer);
     setSelectedType("scout");
     setPhase("placement");
     setHoverCell(null);
@@ -570,9 +571,18 @@ export default function Home() {
     setShowResult(false);
   }
 
+  function reset() {
+    resetTo(firstPlayer);
+  }
+
   function changeMode(nextMode: GameMode) {
     setMode(nextMode);
-    reset();
+    resetTo(firstPlayer);
+  }
+
+  function changeFirstPlayer(nextPlayer: Player) {
+    setFirstPlayer(nextPlayer);
+    resetTo(nextPlayer);
   }
 
   function startSettlement() {
@@ -634,6 +644,20 @@ export default function Home() {
               双人
             </button>
           </div>
+          <div className="mode-switch first-switch" aria-label="选择先手">
+            <button
+              className={firstPlayer === "blue" ? "selected" : ""}
+              onClick={() => changeFirstPlayer("blue")}
+            >
+              {mode === "ai" ? "我先手" : "青方先"}
+            </button>
+            <button
+              className={firstPlayer === "red" ? "selected" : ""}
+              onClick={() => changeFirstPlayer("red")}
+            >
+              {mode === "ai" ? "AI 先手" : "赤方先"}
+            </button>
+          </div>
           <button className="quiet-button" onClick={reset}>
             重新开始
           </button>
@@ -645,7 +669,7 @@ export default function Home() {
           <div className="player-heading">
             <span className="player-dot" />
             <div>
-              <span>后手</span>
+              <span>{firstPlayer === "red" ? "先手" : "后手"}</span>
               <h2>赤方 {mode === "ai" && <em>AI</em>}</h2>
             </div>
             <strong>{redAlive}</strong>
@@ -812,7 +836,10 @@ export default function Home() {
           <div className="player-heading">
             <span className="player-dot" />
             <div>
-              <span>先手 · 你</span>
+              <span>
+                {firstPlayer === "blue" ? "先手" : "后手"}
+                {mode === "ai" && " · 你"}
+              </span>
               <h2>青方</h2>
             </div>
             <strong>{blueAlive}</strong>
