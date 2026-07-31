@@ -664,7 +664,7 @@ export default function Home() {
           : `棋子 赤 ${redAlive} : ${blueAlive} 青 · 控制 赤 ${controlled.red} : ${controlled.blue} 青`;
 
   return (
-    <main className={`game-shell theme-${colorTheme}`}>
+    <main className={`game-shell theme-${colorTheme} mode-${mode}`}>
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">衡</span>
