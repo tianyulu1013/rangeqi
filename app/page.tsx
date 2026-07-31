@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 const BOARD_SIZE = 7;
 const PLAYER_NAMES = { red: "赤方", blue: "青方" } as const;
-const PLAYER_ORDER = ["red", "blue"] as const;
+const PLAYER_ORDER = ["blue", "red"] as const;
 
 type Player = (typeof PLAYER_ORDER)[number];
 type PieceType = "scout" | "guard" | "archer" | "knight" | "fortress";
@@ -147,9 +147,37 @@ function getStats(pieces: Piece[]) {
   return result;
 }
 
+function evaluateForRed(pieces: Piece[]) {
+  const stats = getStats(pieces);
+  let score = 0;
+
+  for (const piece of pieces) {
+    const pieceStats = stats.get(piece.id);
+    if (!pieceStats) continue;
+    const pressure =
+      pieceStats.danger > 0 ? pieceStats.danger * 3.4 : pieceStats.danger;
+    const formation = pieceStats.supports * 0.55 + pieceStats.attacks * 0.7;
+    score +=
+      piece.player === "red"
+        ? -pressure + formation
+        : pressure - formation;
+  }
+
+  const center = (BOARD_SIZE - 1) / 2;
+  for (const piece of pieces) {
+    const centrality =
+      BOARD_SIZE -
+      (Math.abs(piece.row - center) + Math.abs(piece.col - center));
+    score += (piece.player === "red" ? 1 : -1) * centrality * 0.035;
+  }
+
+  return score;
+}
+
 function chooseAiMove(
   pieces: Piece[],
-  inventory: Record<PieceType, number>,
+  redInventory: Record<PieceType, number>,
+  blueInventory: Record<PieceType, number>,
 ) {
   const occupied = new Set(
     pieces.map((piece) => cellKey(piece.row, piece.col)),
@@ -160,48 +188,86 @@ function chooseAiMove(
     col: number;
     score: number;
   }[] = [];
-  const center = (BOARD_SIZE - 1) / 2;
 
   for (const type of PIECE_TYPES) {
-    if (inventory[type] <= 0) continue;
+    if (redInventory[type] <= 0) continue;
     for (let row = 0; row < BOARD_SIZE; row += 1) {
       for (let col = 0; col < BOARD_SIZE; col += 1) {
         if (occupied.has(cellKey(row, col))) continue;
         const candidate: Piece = {
           id: -1,
-          player: "blue",
+          player: "red",
           type,
           row,
           col,
         };
         const imagined = [...pieces, candidate];
-        const imaginedStats = getStats(imagined);
-        let score = 0;
-
-        for (const piece of imagined) {
-          const danger = imaginedStats.get(piece.id)?.danger ?? 0;
-          score += piece.player === "red" ? danger : -danger;
-        }
-
-        const candidateStats = imaginedStats.get(candidate.id);
-        score += (candidateStats?.attacks ?? 0) * 1.6;
-        score += (candidateStats?.supports ?? 0) * 1.25;
-        score -=
-          (Math.abs(row - center) + Math.abs(col - center)) * 0.055;
-        score += Math.random() * 0.18;
-        candidates.push({ type, row, col, score });
+        candidates.push({
+          type,
+          row,
+          col,
+          score: evaluateForRed(imagined),
+        });
       }
     }
   }
 
   candidates.sort((a, b) => b.score - a.score);
-  const shortlist = candidates.slice(0, Math.min(4, candidates.length));
-  return shortlist[Math.floor(Math.random() * shortlist.length)] ?? null;
+  const shortlist = candidates.slice(0, Math.min(16, candidates.length));
+  let best = shortlist[0] ?? null;
+  let bestScore = Number.NEGATIVE_INFINITY;
+
+  for (const candidate of shortlist) {
+    const redPiece: Piece = {
+      id: -1,
+      player: "red",
+      type: candidate.type,
+      row: candidate.row,
+      col: candidate.col,
+    };
+    const afterRed = [...pieces, redPiece];
+    const afterRedOccupied = new Set([
+      ...occupied,
+      cellKey(candidate.row, candidate.col),
+    ]);
+    let strongestBlueReply = Number.POSITIVE_INFINITY;
+    let hasBlueReply = false;
+
+    for (const type of PIECE_TYPES) {
+      if (blueInventory[type] <= 0) continue;
+      for (let row = 0; row < BOARD_SIZE; row += 1) {
+        for (let col = 0; col < BOARD_SIZE; col += 1) {
+          if (afterRedOccupied.has(cellKey(row, col))) continue;
+          hasBlueReply = true;
+          const blueReply: Piece = {
+            id: -2,
+            player: "blue",
+            type,
+            row,
+            col,
+          };
+          strongestBlueReply = Math.min(
+            strongestBlueReply,
+            evaluateForRed([...afterRed, blueReply]),
+          );
+        }
+      }
+    }
+
+    const lookAhead = hasBlueReply ? strongestBlueReply : candidate.score;
+    const combinedScore = candidate.score * 0.32 + lookAhead * 0.68;
+    if (combinedScore > bestScore) {
+      bestScore = combinedScore;
+      best = candidate;
+    }
+  }
+
+  return best;
 }
 
 export default function Home() {
   const [pieces, setPieces] = useState<Piece[]>([]);
-  const [currentPlayer, setCurrentPlayer] = useState<Player>("red");
+  const [currentPlayer, setCurrentPlayer] = useState<Player>("blue");
   const [selectedType, setSelectedType] = useState<PieceType>("scout");
   const [phase, setPhase] = useState<Phase>("placement");
   const [hoverCell, setHoverCell] = useState<[number, number] | null>(null);
@@ -217,6 +283,24 @@ export default function Home() {
     () => new Map(pieces.map((piece) => [cellKey(piece.row, piece.col), piece])),
     [pieces],
   );
+  const influence = useMemo(() => {
+    const cells = new Map<string, { red: number; blue: number }>();
+    for (let row = 0; row < BOARD_SIZE; row += 1) {
+      for (let col = 0; col < BOARD_SIZE; col += 1) {
+        cells.set(cellKey(row, col), { red: 0, blue: 0 });
+      }
+    }
+    for (const piece of pieces) {
+      for (const [dr, dc] of PIECES[piece.type].offsets) {
+        const row = piece.row + dr;
+        const col = piece.col + dc;
+        if (!withinBoard(row, col)) continue;
+        const value = cells.get(cellKey(row, col));
+        if (value) value[piece.player] += 1;
+      }
+    }
+    return cells;
+  }, [pieces]);
 
   const inventory = useMemo(() => {
     const counts: Record<Player, Record<PieceType, number>> = {
@@ -256,7 +340,7 @@ export default function Home() {
     if (
       mode !== "ai" ||
       phase !== "placement" ||
-      currentPlayer !== "blue"
+      currentPlayer !== "red"
     ) {
       setAiThinking(false);
       return;
@@ -264,7 +348,7 @@ export default function Home() {
 
     setAiThinking(true);
     const timer = window.setTimeout(() => {
-      const move = chooseAiMove(pieces, inventory.blue);
+      const move = chooseAiMove(pieces, inventory.red, inventory.blue);
       if (!move) {
         setAiThinking(false);
         return;
@@ -272,7 +356,7 @@ export default function Home() {
 
       const placed: Piece = {
         id: Date.now() + pieces.length,
-        player: "blue",
+        player: "red",
         type: move.type,
         row: move.row,
         col: move.col,
@@ -286,10 +370,10 @@ export default function Home() {
         setPhase("ready");
         setHoverCell(null);
       } else {
-        setCurrentPlayer("red");
-        if (inventory.red[selectedType] <= 0) {
+        setCurrentPlayer("blue");
+        if (inventory.blue[selectedType] <= 0) {
           const available = PIECE_TYPES.find(
-            (type) => inventory.red[type] > 0,
+            (type) => inventory.blue[type] > 0,
           );
           if (available) setSelectedType(available);
         }
@@ -365,7 +449,7 @@ export default function Home() {
     if (
       phase !== "placement" ||
       aiThinking ||
-      (mode === "ai" && currentPlayer === "blue") ||
+      (mode === "ai" && currentPlayer === "red") ||
       inventory[currentPlayer][selectedType] <= 0
     ) {
       return;
@@ -405,15 +489,15 @@ export default function Home() {
     const last = pieces[nextPieces.length];
     if (!last) return;
     setPieces(nextPieces);
-    setCurrentPlayer(mode === "ai" ? "red" : last.player);
-    if (mode === "local" || last.player === "red") setSelectedType(last.type);
+    setCurrentPlayer(mode === "ai" ? "blue" : last.player);
+    if (mode === "local" || last.player === "blue") setSelectedType(last.type);
     setInspectedId(null);
     setPhase("placement");
   }
 
   function reset() {
     setPieces([]);
-    setCurrentPlayer("red");
+    setCurrentPlayer("blue");
     setSelectedType("scout");
     setPhase("placement");
     setHoverCell(null);
@@ -439,7 +523,7 @@ export default function Home() {
   const title =
     phase === "placement"
       ? aiThinking
-        ? "青方 AI 正在推演"
+        ? "赤方 AI 正在推演"
         : `${PLAYER_NAMES[currentPlayer]}布阵`
       : phase === "ready"
         ? "布阵完成"
@@ -498,8 +582,8 @@ export default function Home() {
           <div className="player-heading">
             <span className="player-dot" />
             <div>
-              <span>先手</span>
-              <h2>赤方</h2>
+              <span>后手</span>
+              <h2>赤方 {mode === "ai" && <em>AI</em>}</h2>
             </div>
             <strong>{redAlive}</strong>
           </div>
@@ -509,7 +593,7 @@ export default function Home() {
             inventory={inventory.red}
             selectedType={selectedType}
             phase={phase}
-            isComputer={false}
+            isComputer={mode === "ai"}
             onChoose={chooseType}
           />
         </aside>
@@ -522,6 +606,16 @@ export default function Home() {
                 const col = index % BOARD_SIZE;
                 const piece = boardPieces.get(cellKey(row, col));
                 const pieceStats = piece ? stats.get(piece.id) : null;
+                const cellInfluence = influence.get(cellKey(row, col));
+                const zoneClass =
+                  !cellInfluence ||
+                  (cellInfluence.red === 0 && cellInfluence.blue === 0)
+                    ? ""
+                    : cellInfluence.red === cellInfluence.blue
+                      ? "zone-balanced"
+                      : cellInfluence.red > cellInfluence.blue
+                        ? "zone-danger"
+                        : "zone-support";
                 const isPending = piece ? pendingIds.includes(piece.id) : false;
                 const isInspected = piece?.id === inspectedId;
                 return (
@@ -529,6 +623,7 @@ export default function Home() {
                     className={[
                       "cell",
                       highlighted.has(cellKey(row, col)) ? "in-range" : "",
+                      zoneClass,
                       piece ? "occupied" : "",
                       isInspected ? "inspected" : "",
                     ]
@@ -582,8 +677,9 @@ export default function Home() {
             )}
             {phase === "placement" && (
               <div className="range-legend">
-                <span className="legend-square" />
-              鼠标经过空格可预览范围
+                <span><i className="legend-square danger" />敌方威胁</span>
+                <span><i className="legend-square support" />己方支援</span>
+                <span><i className="legend-square balanced" />势均力敌</span>
               </div>
             )}
           </div>
@@ -593,8 +689,8 @@ export default function Home() {
           <div className="player-heading">
             <span className="player-dot" />
             <div>
-              <span>后手</span>
-              <h2>青方 {mode === "ai" && <em>AI</em>}</h2>
+              <span>先手 · 你</span>
+              <h2>青方</h2>
             </div>
             <strong>{blueAlive}</strong>
           </div>
@@ -604,7 +700,7 @@ export default function Home() {
             inventory={inventory.blue}
             selectedType={selectedType}
             phase={phase}
-            isComputer={mode === "ai"}
+            isComputer={false}
             onChoose={chooseType}
           />
         </aside>
