@@ -616,6 +616,14 @@ export default function Home() {
                       : cellInfluence.red > cellInfluence.blue
                         ? "zone-danger"
                         : "zone-support";
+                const zoneSymbol =
+                  zoneClass === "zone-danger"
+                    ? "!"
+                    : zoneClass === "zone-support"
+                      ? "+"
+                      : zoneClass === "zone-balanced"
+                        ? "="
+                        : "";
                 const isPending = piece ? pendingIds.includes(piece.id) : false;
                 const isInspected = piece?.id === inspectedId;
                 return (
@@ -641,6 +649,11 @@ export default function Home() {
                     onFocus={() => setHoverCell([row, col])}
                     onClick={() => placePiece(row, col)}
                   >
+                    {zoneSymbol && (
+                      <span className="zone-symbol" aria-hidden="true">
+                        {zoneSymbol}
+                      </span>
+                    )}
                     {piece && (
                       <span
                         className={`piece ${piece.player} ${isPending ? "pending" : ""}`}
@@ -677,9 +690,9 @@ export default function Home() {
             )}
             {phase === "placement" && (
               <div className="range-legend">
-                <span><i className="legend-square danger" />敌方威胁</span>
-                <span><i className="legend-square support" />己方支援</span>
-                <span><i className="legend-square balanced" />势均力敌</span>
+                <span><i className="legend-square danger">!</i>敌方威胁</span>
+                <span><i className="legend-square support">+</i>己方支援</span>
+                <span><i className="legend-square balanced">=</i>势均力敌</span>
               </div>
             )}
           </div>
