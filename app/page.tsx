@@ -7,7 +7,13 @@ const PLAYER_NAMES = { red: "赤方", blue: "青方" } as const;
 const PLAYER_ORDER = ["blue", "red"] as const;
 
 type Player = (typeof PLAYER_ORDER)[number];
-type PieceType = "scout" | "guard" | "archer" | "knight" | "fortress";
+type PieceType =
+  | "scout"
+  | "guard"
+  | "archer"
+  | "cannon"
+  | "knight"
+  | "fortress";
 type Phase = "placement" | "ready" | "settling" | "finished";
 type GameMode = "ai" | "local";
 type ColorTheme = "standard" | "vivid" | "accessible";
@@ -67,8 +73,20 @@ const PIECES: Record<
   archer: {
     name: "射手",
     mark: "射",
-    count: 2,
+    count: 1,
     description: "上下左右正好两格",
+    offsets: [
+      [-2, 0],
+      [2, 0],
+      [0, -2],
+      [0, 2],
+    ],
+  },
+  cannon: {
+    name: "炮台",
+    mark: "炮",
+    count: 1,
+    description: "隔一枚棋子控制其后直线",
     offsets: [
       [-2, 0],
       [2, 0],
@@ -124,6 +142,47 @@ function cellKey(row: number, col: number) {
   return `${row}-${col}`;
 }
 
+function getControlledCells(piece: Piece, pieces: Piece[]) {
+  if (piece.type !== "cannon") {
+    return PIECES[piece.type].offsets
+      .map(([dr, dc]) => [piece.row + dr, piece.col + dc] as const)
+      .filter(([row, col]) => withinBoard(row, col));
+  }
+
+  const occupied = new Set(
+    pieces
+      .filter((candidate) => candidate.id !== piece.id)
+      .map((candidate) => cellKey(candidate.row, candidate.col)),
+  );
+  const controlled: (readonly [number, number])[] = [];
+  const directions = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+  ] as const;
+
+  for (const [dr, dc] of directions) {
+    let row = piece.row + dr;
+    let col = piece.col + dc;
+    let foundScreen = false;
+
+    while (withinBoard(row, col)) {
+      const occupiedHere = occupied.has(cellKey(row, col));
+      if (!foundScreen) {
+        if (occupiedHere) foundScreen = true;
+      } else {
+        controlled.push([row, col]);
+        if (occupiedHere) break;
+      }
+      row += dr;
+      col += dc;
+    }
+  }
+
+  return controlled;
+}
+
 function getStats(pieces: Piece[]) {
   const result = new Map<number, PieceStats>();
 
@@ -133,9 +192,8 @@ function getStats(pieces: Piece[]) {
 
     for (const source of pieces) {
       if (source.id === target.id) continue;
-      const reachesTarget = PIECES[source.type].offsets.some(
-        ([dr, dc]) =>
-          source.row + dr === target.row && source.col + dc === target.col,
+      const reachesTarget = getControlledCells(source, pieces).some(
+        ([row, col]) => row === target.row && col === target.col,
       );
       if (!reachesTarget) continue;
       if (source.player === target.player) supports += 1;
@@ -160,10 +218,7 @@ function getInfluence(pieces: Piece[]) {
     }
   }
   for (const piece of pieces) {
-    for (const [dr, dc] of PIECES[piece.type].offsets) {
-      const row = piece.row + dr;
-      const col = piece.col + dc;
-      if (!withinBoard(row, col)) continue;
+    for (const [row, col] of getControlledCells(piece, pieces)) {
       const value = cells.get(cellKey(row, col));
       if (value) value[piece.player] += 1;
     }
@@ -395,15 +450,18 @@ export default function Home() {
     const focusCell = previewCell ?? hoverCell;
     if (phase !== "placement" || !focusCell) return cells;
     const [row, col] = focusCell;
-    for (const [dr, dc] of PIECES[selectedType].offsets) {
-      const nextRow = row + dr;
-      const nextCol = col + dc;
-      if (withinBoard(nextRow, nextCol)) {
-        cells.add(cellKey(nextRow, nextCol));
-      }
+    const previewPiece: Piece = {
+      id: -3,
+      player: currentPlayer,
+      type: selectedType,
+      row,
+      col,
+    };
+    for (const [nextRow, nextCol] of getControlledCells(previewPiece, pieces)) {
+      cells.add(cellKey(nextRow, nextCol));
     }
     return cells;
-  }, [hoverCell, phase, previewCell, selectedType]);
+  }, [currentPlayer, hoverCell, phase, pieces, previewCell, selectedType]);
 
   const inspected = pieces.find((piece) => piece.id === inspectedId) ?? null;
   const redAlive = pieces.filter((piece) => piece.player === "red").length;
@@ -1136,6 +1194,10 @@ function RangeIcon({ type }: { type: PieceType }) {
   const targets = new Set(
     PIECES[type].offsets.map(([row, col]) => cellKey(row + 2, col + 2)),
   );
+  const screens =
+    type === "cannon"
+      ? new Set(["1-2", "2-1", "2-3", "3-2"])
+      : new Set<string>();
   return (
     <span className="range-icon" aria-hidden="true">
       {Array.from({ length: 25 }, (_, index) => {
@@ -1148,6 +1210,7 @@ function RangeIcon({ type }: { type: PieceType }) {
             className={[
               "range-dot",
               isOrigin ? "origin" : "",
+              screens.has(cellKey(row, col)) ? "screen" : "",
               targets.has(cellKey(row, col)) ? "target" : "",
             ]
               .filter(Boolean)
