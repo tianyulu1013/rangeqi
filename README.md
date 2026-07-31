@@ -26,6 +26,6 @@ npm run dev
 npm run build:static
 ```
 
-构建产物位于 `docs/`，不需要服务器、数据库或 API。AI 的全部决策逻辑都在浏览器本地运行。
+构建产物会生成到 `docs/`，并同步一份到仓库根目录供 GitHub Pages 使用。不需要服务器、数据库或 API，AI 的全部决策逻辑都在浏览器本地运行。
 
-仓库包含 GitHub Pages 工作流。启用仓库的 Pages（Source 选择 GitHub Actions）后，每次推送 `main` 分支都会自动部署。
+GitHub Pages 使用 `main` 分支根目录发布；推送后即可更新游戏。
