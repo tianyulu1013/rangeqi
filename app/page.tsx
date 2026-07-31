@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-const BOARD_SIZE = 9;
+const BOARD_SIZE = 7;
 const PLAYER_NAMES = { red: "赤方", blue: "青方" } as const;
 const PLAYER_ORDER = ["red", "blue"] as const;
 
@@ -371,7 +371,7 @@ export default function Home() {
 
         <div className="board-column">
           <div className={`board-frame ${phase === "settling" ? "is-settling" : ""}`}>
-            <div className="board" role="grid" aria-label="九乘九阵衡棋盘">
+            <div className="board" role="grid" aria-label="七乘七阵衡棋盘">
               {Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
                 const row = Math.floor(index / BOARD_SIZE);
                 const col = index % BOARD_SIZE;
