@@ -1019,12 +1019,32 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.55);
 }
 
+.danger-badge.dying,
 .danger-badge.unsafe {
-  background: #d34e38;
+  background: #e64a38;
+  box-shadow: 0 0 6px rgba(230, 74, 56, 0.6);
 }
 
+.danger-badge.living,
 .danger-badge.safe {
-  background: #3d5952;
+  background: #2e9a66;
+  box-shadow: 0 0 6px rgba(46, 154, 102, 0.4);
+}
+
+.danger-badge.neutral {
+  background: #3e4e4a;
+}
+
+.stat-survival.dying {
+  color: #f87171;
+}
+
+.stat-survival.living {
+  color: #4ade80;
+}
+
+.stat-survival.neutral {
+  color: #9ca3af;
 }
 
 .board-actions {
@@ -2258,6 +2278,7 @@ button {
   }
 
   .mobile-opponent-summary i {
+    position: relative;
     width: 18px;
     height: 18px;
     display: grid;
@@ -2268,10 +2289,20 @@ button {
     font-family: "STKaiti", "KaiTi", serif;
     font-size: 10px;
     font-style: normal;
+    overflow: hidden;
   }
 
   .mobile-opponent-summary.blue i {
     background: var(--blue);
+  }
+
+  .mobile-opponent-summary i .piece-icon {
+    width: 68%;
+    height: 68%;
+  }
+
+  .mobile-opponent-summary i .range-icon {
+    width: 72%;
   }
 }
 
@@ -2283,5 +2314,47 @@ button {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* English localization responsive safeguards */
+.lang-en .brand h1 {
+  font-size: clamp(16px, 2vw, 20px);
+  letter-spacing: 0.02em;
+}
+
+.lang-en .turn-copy strong {
+  white-space: nowrap;
+}
+
+.lang-en .inventory-piece .piece-copy strong {
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.lang-en .inventory-piece .piece-copy small {
+  font-size: 9px;
+  line-height: 1.1;
+}
+
+@media (max-width: 720px) {
+  .lang-en .inventory-piece .piece-copy strong {
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .lang-en .topbar {
+    gap: 8px;
+  }
+
+  .lang-en .turn-copy span {
+    font-size: 11px;
+  }
+
+  .lang-en .stat-row span {
+    font-size: 11px;
+    white-space: nowrap;
   }
 }
