@@ -11,7 +11,8 @@ type PieceType = "scout" | "guard" | "archer" | "knight" | "fortress";
 type Phase = "placement" | "ready" | "settling" | "finished";
 type GameMode = "ai" | "local";
 type ColorTheme = "standard" | "vivid" | "accessible";
-type AiStyle = "balanced" | "aggressive" | "defensive" | "territorial";
+type StrategyStyle = "balanced" | "aggressive" | "defensive" | "territorial";
+type AiStyle = StrategyStyle | "random";
 type FirstChoice = Player | "random";
 type PieceDisplay = "mark" | "range";
 
@@ -184,7 +185,7 @@ function countControlledCells(pieces: Piece[]) {
 }
 
 const AI_WEIGHTS: Record<
-  AiStyle,
+  StrategyStyle,
   { attack: number; safety: number; support: number; territory: number }
 > = {
   balanced: { attack: 3.4, safety: 3.5, support: 0.65, territory: 0.22 },
@@ -193,7 +194,7 @@ const AI_WEIGHTS: Record<
   territorial: { attack: 2.8, safety: 3.1, support: 0.55, territory: 0.9 },
 };
 
-function evaluateForRed(pieces: Piece[], style: AiStyle) {
+function evaluateForRed(pieces: Piece[], style: StrategyStyle) {
   const stats = getStats(pieces);
   const weights = AI_WEIGHTS[style];
   let score = 0;
@@ -230,7 +231,7 @@ function chooseAiMove(
   pieces: Piece[],
   redInventory: Record<PieceType, number>,
   blueInventory: Record<PieceType, number>,
-  style: AiStyle,
+  style: StrategyStyle,
 ) {
   const occupied = new Set(
     pieces.map((piece) => cellKey(piece.row, piece.col)),
@@ -318,17 +319,24 @@ function chooseAiMove(
   return best;
 }
 
-function chooseRandomAiOpening(inventory: Record<PieceType, number>) {
-  const piecePool = PIECE_TYPES.flatMap((type) =>
-    Array.from({ length: inventory[type] }, () => type),
-  );
-  const type = piecePool[Math.floor(Math.random() * piecePool.length)];
-  if (!type) return null;
-  return {
-    type,
-    row: Math.floor(Math.random() * BOARD_SIZE),
-    col: Math.floor(Math.random() * BOARD_SIZE),
-  };
+const STRATEGY_STYLES: StrategyStyle[] = [
+  "balanced",
+  "aggressive",
+  "defensive",
+  "territorial",
+];
+
+const STRATEGY_LABELS: Record<StrategyStyle, string> = {
+  balanced: "均衡",
+  aggressive: "猛攻",
+  defensive: "结阵",
+  territorial: "控场",
+};
+
+function pickRandomStrategy(): StrategyStyle {
+  return STRATEGY_STYLES[
+    Math.floor(Math.random() * STRATEGY_STYLES.length)
+  ];
 }
 
 function resolveFirstPlayer(choice: FirstChoice): Player {
@@ -352,6 +360,8 @@ export default function Home() {
   const [aiThinking, setAiThinking] = useState(false);
   const [colorTheme, setColorTheme] = useState<ColorTheme>("standard");
   const [aiStyle, setAiStyle] = useState<AiStyle>("balanced");
+  const [activeAiStyle, setActiveAiStyle] =
+    useState<StrategyStyle>("balanced");
   const [showResult, setShowResult] = useState(false);
   const [pieceDisplay, setPieceDisplay] = useState<PieceDisplay>("mark");
 
@@ -425,15 +435,12 @@ export default function Home() {
 
     setAiThinking(true);
     const timer = window.setTimeout(() => {
-      const move =
-        pieces.length === 0
-          ? chooseRandomAiOpening(inventory.red)
-          : chooseAiMove(
-              pieces,
-              inventory.red,
-              inventory.blue,
-              aiStyle,
-            );
+      const move = chooseAiMove(
+        pieces,
+        inventory.red,
+        inventory.blue,
+        activeAiStyle,
+      );
       if (!move) {
         setAiThinking(false);
         return;
@@ -468,7 +475,7 @@ export default function Home() {
     return () => window.clearTimeout(timer);
   }, [
     currentPlayer,
-    aiStyle,
+    activeAiStyle,
     inventory,
     mode,
     phase,
@@ -583,6 +590,9 @@ export default function Home() {
   }
 
   function resetTo(startingPlayer: Player) {
+    if (aiStyle === "random") {
+      setActiveAiStyle(pickRandomStrategy());
+    }
     setPieces([]);
     setCurrentPlayer(startingPlayer);
     setSelectedType("scout");
@@ -614,6 +624,13 @@ export default function Home() {
     setFirstChoice(nextChoice);
     setFirstPlayer(nextPlayer);
     resetTo(nextPlayer);
+  }
+
+  function changeAiStyle(nextStyle: AiStyle) {
+    setAiStyle(nextStyle);
+    setActiveAiStyle(
+      nextStyle === "random" ? pickRandomStrategy() : nextStyle,
+    );
   }
 
   function startSettlement() {
@@ -725,7 +742,11 @@ export default function Home() {
             <div className="ai-style-picker">
               <div className="ai-style-heading">
                 <span>本地策略引擎</span>
-                <strong>AI 风格</strong>
+                <strong>
+                  AI 风格
+                  {aiStyle === "random" &&
+                    ` · 本局${STRATEGY_LABELS[activeAiStyle]}`}
+                </strong>
               </div>
               <div className="ai-style-options">
                 {([
@@ -733,12 +754,13 @@ export default function Home() {
                   ["aggressive", "猛攻"],
                   ["defensive", "结阵"],
                   ["territorial", "控场"],
+                  ["random", "随机"],
                 ] as const).map(([style, label]) => (
                   <button
                     key={style}
                     className={aiStyle === style ? "selected" : ""}
                     disabled={phase !== "placement" || aiThinking}
-                    onClick={() => setAiStyle(style)}
+                    onClick={() => changeAiStyle(style)}
                   >
                     {label}
                   </button>
