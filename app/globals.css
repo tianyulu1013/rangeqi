@@ -134,7 +134,7 @@ button {
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 10px;
-  max-width: 360px;
+  max-width: 580px;
 }
 
 .mode-switch {
@@ -163,6 +163,31 @@ button {
 
 .first-switch button {
   min-width: 54px;
+}
+
+.ai-style-select {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: rgba(246, 240, 228, 0.5);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+}
+
+.ai-style-select select {
+  min-height: 31px;
+  color: #f6f0e4;
+  background: #202a28;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  padding: 4px 28px 4px 9px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.ai-style-select select:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
 
 .quiet-button:hover {
@@ -1132,6 +1157,15 @@ button {
     flex-direction: row;
     align-items: center;
     gap: 6px;
+  }
+
+  .ai-style-select {
+    flex: 1 1 150px;
+  }
+
+  .ai-style-select select {
+    width: 100%;
+    min-height: 38px;
   }
 
   .mode-switch button {

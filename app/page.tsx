@@ -712,6 +712,28 @@ export default function Home() {
               随机
             </button>
           </div>
+          {mode === "ai" && (
+            <label className="ai-style-select">
+              <span>
+                AI 风格
+                {aiStyle === "random" &&
+                  ` · 本局${STRATEGY_LABELS[activeAiStyle]}`}
+              </span>
+              <select
+                value={aiStyle}
+                onChange={(event) =>
+                  changeAiStyle(event.target.value as AiStyle)
+                }
+                aria-label="选择 AI 风格"
+              >
+                <option value="balanced">均衡</option>
+                <option value="aggressive">猛攻</option>
+                <option value="defensive">结阵</option>
+                <option value="territorial">控场</option>
+                <option value="random">随机（每局抽一种）</option>
+              </select>
+            </label>
+          )}
           <button className="quiet-button" onClick={reset}>
             重新开始
           </button>
@@ -738,36 +760,6 @@ export default function Home() {
             pieceDisplay={pieceDisplay}
             onChoose={chooseType}
           />
-          {mode === "ai" && (
-            <div className="ai-style-picker">
-              <div className="ai-style-heading">
-                <span>本地策略引擎</span>
-                <strong>
-                  AI 风格
-                  {aiStyle === "random" &&
-                    ` · 本局${STRATEGY_LABELS[activeAiStyle]}`}
-                </strong>
-              </div>
-              <div className="ai-style-options">
-                {([
-                  ["balanced", "均衡"],
-                  ["aggressive", "猛攻"],
-                  ["defensive", "结阵"],
-                  ["territorial", "控场"],
-                  ["random", "随机"],
-                ] as const).map(([style, label]) => (
-                  <button
-                    key={style}
-                    className={aiStyle === style ? "selected" : ""}
-                    disabled={phase !== "placement" || aiThinking}
-                    onClick={() => changeAiStyle(style)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </aside>
 
         <div className="board-column">
