@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import {
+  GiBroadsword,
+  GiCannon,
+  GiHorseHead,
+} from "react-icons/gi";
+import type { IconType } from "react-icons";
 
 const BOARD_SIZE = 7;
 const PLAYER_NAMES = { red: "赤方", blue: "青方" } as const;
@@ -19,8 +25,8 @@ type GameMode = "ai" | "local";
 type ColorTheme = "standard" | "vivid" | "accessible";
 type StrategyStyle = "balanced" | "aggressive" | "defensive" | "territorial";
 type AiStyle = StrategyStyle | "random";
-type FirstChoice = Player | "random";
-type PieceDisplay = "mark" | "range";
+type FirstChoice = "human" | "ai" | "random";
+type PieceDisplay = "mark" | "icon" | "range";
 
 type Piece = {
   id: number;
@@ -129,6 +135,14 @@ const PIECES: Record<
 };
 
 const PIECE_TYPES = Object.keys(PIECES) as PieceType[];
+const PIECE_ICONS: Record<
+  Exclude<PieceType, "scout" | "archer" | "fortress">,
+  IconType
+> = {
+  guard: GiBroadsword,
+  cannon: GiCannon,
+  knight: GiHorseHead,
+};
 const PIECES_PER_PLAYER = PIECE_TYPES.reduce(
   (sum, type) => sum + PIECES[type].count,
   0,
@@ -377,7 +391,7 @@ function getResolutionScore(pieces: Piece[]) {
   return (redAlive - blueAlive) * 5 + (control.red - control.blue) * 0.16;
 }
 
-function chooseAiMove(
+function chooseRedMove(
   pieces: Piece[],
   redInventory: Record<PieceType, number>,
   blueInventory: Record<PieceType, number>,
@@ -480,6 +494,29 @@ function chooseAiMove(
   return best;
 }
 
+function chooseAiMove(
+  pieces: Piece[],
+  aiPlayer: Player,
+  aiInventory: Record<PieceType, number>,
+  opponentInventory: Record<PieceType, number>,
+  style: StrategyStyle,
+) {
+  if (aiPlayer === "red") {
+    return chooseRedMove(
+      pieces,
+      aiInventory,
+      opponentInventory,
+      style,
+    );
+  }
+
+  const swapped = pieces.map((piece) => ({
+    ...piece,
+    player: piece.player === "red" ? "blue" : "red",
+  })) as Piece[];
+  return chooseRedMove(swapped, aiInventory, opponentInventory, style);
+}
+
 const STRATEGY_STYLES: StrategyStyle[] = [
   "balanced",
   "aggressive",
@@ -507,16 +544,17 @@ function pickRandomStrategy(): StrategyStyle {
   ];
 }
 
-function resolveFirstPlayer(choice: FirstChoice): Player {
-  if (choice !== "random") return choice;
+function resolveHumanPlayer(choice: FirstChoice): Player {
+  if (choice === "human") return "red";
+  if (choice === "ai") return "blue";
   return Math.random() < 0.5 ? "blue" : "red";
 }
 
 export default function Home() {
   const [pieces, setPieces] = useState<Piece[]>([]);
-  const [firstChoice, setFirstChoice] = useState<FirstChoice>("blue");
-  const [firstPlayer, setFirstPlayer] = useState<Player>("blue");
-  const [currentPlayer, setCurrentPlayer] = useState<Player>("blue");
+  const [firstChoice, setFirstChoice] = useState<FirstChoice>("random");
+  const [humanPlayer, setHumanPlayer] = useState<Player>("blue");
+  const [currentPlayer, setCurrentPlayer] = useState<Player>("red");
   const [selectedType, setSelectedType] = useState<PieceType>("scout");
   const [phase, setPhase] = useState<Phase>("placement");
   const [hoverCell, setHoverCell] = useState<[number, number] | null>(null);
@@ -528,12 +566,15 @@ export default function Home() {
   const [mode, setMode] = useState<GameMode>("ai");
   const [aiThinking, setAiThinking] = useState(false);
   const [colorTheme, setColorTheme] = useState<ColorTheme>("standard");
-  const [aiStyle, setAiStyle] = useState<AiStyle>("balanced");
+  const [aiStyle, setAiStyle] = useState<AiStyle>("random");
   const [activeAiStyle, setActiveAiStyle] =
     useState<StrategyStyle>("balanced");
   const [showResult, setShowResult] = useState(false);
   const [pieceDisplay, setPieceDisplay] = useState<PieceDisplay>("mark");
   const [showSettings, setShowSettings] = useState(false);
+  const [showRulebook, setShowRulebook] = useState(false);
+  const aiPlayer: Player = humanPlayer === "red" ? "blue" : "red";
+  const viewPlayer: Player = mode === "ai" ? humanPlayer : currentPlayer;
 
   const stats = useMemo(() => getStats(pieces), [pieces]);
   const boardPieces = useMemo(
@@ -598,16 +639,24 @@ export default function Home() {
         : "棋子数与控制格数完全相同";
   const opponentPlayer: Player =
     mode === "ai"
-      ? "red"
+      ? aiPlayer
       : currentPlayer === "blue"
         ? "red"
         : "blue";
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setHumanPlayer(resolveHumanPlayer("random"));
+      setActiveAiStyle(pickRandomStrategy());
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     if (
       mode !== "ai" ||
       phase !== "placement" ||
-      currentPlayer !== "red"
+      currentPlayer !== aiPlayer
     ) {
       setAiThinking(false);
       return;
@@ -617,8 +666,9 @@ export default function Home() {
     const timer = window.setTimeout(() => {
       const move = chooseAiMove(
         pieces,
-        inventory.red,
-        inventory.blue,
+        aiPlayer,
+        inventory[aiPlayer],
+        inventory[humanPlayer],
         activeAiStyle,
       );
       if (!move) {
@@ -628,7 +678,7 @@ export default function Home() {
 
       const placed: Piece = {
         id: Date.now() + pieces.length,
-        player: "red",
+        player: aiPlayer,
         type: move.type,
         row: move.row,
         col: move.col,
@@ -642,10 +692,10 @@ export default function Home() {
         setPhase("ready");
         setHoverCell(null);
       } else {
-        setCurrentPlayer("blue");
-        if (inventory.blue[selectedType] <= 0) {
+        setCurrentPlayer(humanPlayer);
+        if (inventory[humanPlayer][selectedType] <= 0) {
           const available = PIECE_TYPES.find(
-            (type) => inventory.blue[type] > 0,
+            (type) => inventory[humanPlayer][type] > 0,
           );
           if (available) setSelectedType(available);
         }
@@ -656,6 +706,8 @@ export default function Home() {
   }, [
     currentPlayer,
     activeAiStyle,
+    aiPlayer,
+    humanPlayer,
     inventory,
     mode,
     phase,
@@ -725,7 +777,7 @@ export default function Home() {
     if (
       phase !== "placement" ||
       aiThinking ||
-      (mode === "ai" && currentPlayer === "red") ||
+      (mode === "ai" && currentPlayer === aiPlayer) ||
       inventory[currentPlayer][selectedType] <= 0
     ) {
       return;
@@ -773,23 +825,27 @@ export default function Home() {
 
   function undo() {
     if ((phase !== "placement" && phase !== "ready") || aiThinking) return;
+    if (mode === "ai" && pieces.length < 2) return;
     const steps = mode === "ai" && pieces.length >= 2 ? 2 : 1;
     const nextPieces = pieces.slice(0, -steps);
-    const last = pieces[nextPieces.length];
-    if (!last) return;
+    const removed = pieces.slice(-steps);
+    const lastHumanMove = removed.find(
+      (piece) => mode === "local" || piece.player === humanPlayer,
+    );
+    if (!lastHumanMove) return;
     setPieces(nextPieces);
-    setCurrentPlayer(mode === "ai" ? "blue" : last.player);
-    if (mode === "local" || last.player === "blue") setSelectedType(last.type);
+    setCurrentPlayer(mode === "ai" ? humanPlayer : lastHumanMove.player);
+    setSelectedType(lastHumanMove.type);
     setInspectedId(null);
     setPhase("placement");
   }
 
-  function resetTo(startingPlayer: Player) {
+  function resetTo() {
     if (aiStyle === "random") {
       setActiveAiStyle(pickRandomStrategy());
     }
     setPieces([]);
-    setCurrentPlayer(startingPlayer);
+    setCurrentPlayer("red");
     setSelectedType("scout");
     setPhase("placement");
     setHoverCell(null);
@@ -804,23 +860,20 @@ export default function Home() {
 
   function reset() {
     setShowSettings(false);
-    const nextFirst = resolveFirstPlayer(firstChoice);
-    setFirstPlayer(nextFirst);
-    resetTo(nextFirst);
+    if (mode === "ai") setHumanPlayer(resolveHumanPlayer(firstChoice));
+    resetTo();
   }
 
   function changeMode(nextMode: GameMode) {
     setMode(nextMode);
-    const nextFirst = resolveFirstPlayer(firstChoice);
-    setFirstPlayer(nextFirst);
-    resetTo(nextFirst);
+    if (nextMode === "ai") setHumanPlayer(resolveHumanPlayer(firstChoice));
+    resetTo();
   }
 
   function changeFirstPlayer(nextChoice: FirstChoice) {
-    const nextPlayer = resolveFirstPlayer(nextChoice);
     setFirstChoice(nextChoice);
-    setFirstPlayer(nextPlayer);
-    resetTo(nextPlayer);
+    setHumanPlayer(resolveHumanPlayer(nextChoice));
+    resetTo();
   }
 
   function changeAiStyle(nextStyle: AiStyle) {
@@ -841,7 +894,7 @@ export default function Home() {
   const title =
     phase === "placement"
       ? aiThinking
-        ? "赤方 AI 正在推演"
+        ? `${PLAYER_NAMES[aiPlayer]} AI 正在推演`
         : `${PLAYER_NAMES[currentPlayer]}布阵`
       : phase === "ready"
         ? "布阵完成"
@@ -877,7 +930,10 @@ export default function Home() {
         <div className="header-actions">
           <button
             className="quiet-button settings-button"
-            onClick={() => setShowSettings(true)}
+            onClick={() => {
+              setShowRulebook(false);
+              setShowSettings(true);
+            }}
           >
             设置
           </button>
@@ -888,12 +944,17 @@ export default function Home() {
       </header>
 
       <section className="game-layout">
-        <aside className={`player-panel red-panel ${currentPlayer === "red" && phase === "placement" ? "active" : ""}`}>
+        <aside className={`player-panel red-panel ${mode === "ai" && humanPlayer === "red" ? "human-panel" : ""} ${currentPlayer === "red" ? "active" : ""}`}>
           <div className="player-heading">
             <span className="player-dot" />
             <div>
-              <span>{firstPlayer === "red" ? "先手" : "后手"}</span>
-              <h2>赤方 {mode === "ai" && <em>AI</em>}</h2>
+              <span>
+                先手
+                {mode === "ai" && humanPlayer === "red" && " · 你"}
+              </span>
+              <h2>
+                赤方 {mode === "ai" && aiPlayer === "red" && <em>AI</em>}
+              </h2>
             </div>
             <strong>{redAlive}</strong>
           </div>
@@ -903,7 +964,7 @@ export default function Home() {
             inventory={inventory.red}
             selectedType={selectedType}
             phase={phase}
-            isComputer={mode === "ai"}
+            isComputer={mode === "ai" && aiPlayer === "red"}
             pieceDisplay={pieceDisplay}
             onChoose={chooseType}
           />
@@ -927,23 +988,30 @@ export default function Home() {
                 const piece = boardPieces.get(cellKey(row, col));
                 const pieceStats = piece ? stats.get(piece.id) : null;
                 const cellInfluence = influence.get(cellKey(row, col));
+                const redInfluence = cellInfluence?.red ?? 0;
+                const blueInfluence = cellInfluence?.blue ?? 0;
+                const dominantPlayer: Player | null =
+                  redInfluence === blueInfluence
+                    ? null
+                    : redInfluence > blueInfluence
+                      ? "red"
+                      : "blue";
                 const zoneClass =
-                  !cellInfluence ||
-                  (cellInfluence.red === 0 && cellInfluence.blue === 0)
+                  redInfluence === 0 && blueInfluence === 0
                     ? ""
-                    : cellInfluence.red === cellInfluence.blue
+                    : dominantPlayer === null
                       ? "zone-balanced"
-                      : cellInfluence.red > cellInfluence.blue
+                      : dominantPlayer === "red"
                         ? "zone-danger"
                         : "zone-support";
                 const zoneSymbol =
-                  zoneClass === "zone-danger"
-                    ? "!"
-                    : zoneClass === "zone-support"
-                      ? "+"
-                      : zoneClass === "zone-balanced"
-                        ? "="
-                        : "";
+                  zoneClass === "zone-balanced"
+                    ? "="
+                    : dominantPlayer
+                      ? dominantPlayer === viewPlayer
+                        ? "+"
+                        : "!"
+                      : "";
                 const isPending = piece ? pendingIds.includes(piece.id) : false;
                 const isInspected = piece?.id === inspectedId;
                 return (
@@ -981,13 +1049,7 @@ export default function Home() {
                       <span
                         className={`piece ${piece.player} ${isPending ? "pending" : ""}`}
                       >
-                        {pieceDisplay === "mark" ? (
-                          <span className="piece-mark">
-                            {PIECES[piece.type].mark}
-                          </span>
-                        ) : (
-                          <RangeIcon type={piece.type} />
-                        )}
+                        <PieceFace type={piece.type} display={pieceDisplay} />
                         {pieceStats && (
                           <span
                             className={`danger-badge ${pieceStats.danger > 0 ? "unsafe" : "safe"}`}
@@ -1026,8 +1088,18 @@ export default function Home() {
               </button>
             )}
             <div className="range-legend">
-              <span><i className="legend-square danger">!</i>敌方威胁</span>
-              <span><i className="legend-square support">+</i>己方支援</span>
+              <span>
+                <i className="legend-square danger">
+                  {viewPlayer === "red" ? "+" : "!"}
+                </i>
+                {viewPlayer === "red" ? "己方支援" : "敌方威胁"}
+              </span>
+              <span>
+                <i className="legend-square support">
+                  {viewPlayer === "blue" ? "+" : "!"}
+                </i>
+                {viewPlayer === "blue" ? "己方支援" : "敌方威胁"}
+              </span>
               <span><i className="legend-square balanced">=</i>势均力敌</span>
             </div>
           </div>
@@ -1036,15 +1108,17 @@ export default function Home() {
           </p>
         </div>
 
-        <aside className={`player-panel blue-panel ${currentPlayer === "blue" && phase === "placement" ? "active" : ""}`}>
+        <aside className={`player-panel blue-panel ${mode === "ai" && humanPlayer === "blue" ? "human-panel" : ""} ${currentPlayer === "blue" ? "active" : ""}`}>
           <div className="player-heading">
             <span className="player-dot" />
             <div>
               <span>
-                {firstPlayer === "blue" ? "先手" : "后手"}
-                {mode === "ai" && " · 你"}
+                后手
+                {mode === "ai" && humanPlayer === "blue" && " · 你"}
               </span>
-              <h2>青方</h2>
+              <h2>
+                青方 {mode === "ai" && aiPlayer === "blue" && <em>AI</em>}
+              </h2>
             </div>
             <strong>{blueAlive}</strong>
           </div>
@@ -1054,7 +1128,7 @@ export default function Home() {
             inventory={inventory.blue}
             selectedType={selectedType}
             phase={phase}
-            isComputer={false}
+            isComputer={mode === "ai" && aiPlayer === "blue"}
             pieceDisplay={pieceDisplay}
             onChoose={chooseType}
           />
@@ -1068,11 +1142,7 @@ export default function Home() {
             <>
               <div className="inspect-title">
                 <span className={`mini-piece ${inspected.player}`}>
-                  {pieceDisplay === "mark" ? (
-                    PIECES[inspected.type].mark
-                  ) : (
-                    <RangeIcon type={inspected.type} />
-                  )}
+                  <PieceFace type={inspected.type} display={pieceDisplay} />
                 </span>
                 <div>
                   <h3>
@@ -1121,8 +1191,10 @@ export default function Home() {
           >
             <div className="settings-heading">
               <div>
-                <p>对局偏好</p>
-                <h2 id="settings-title">设置</h2>
+                <p>{showRulebook ? "完整玩法" : "对局偏好"}</p>
+                <h2 id="settings-title">
+                  {showRulebook ? "规则书" : "设置"}
+                </h2>
               </div>
               <button
                 className="settings-close"
@@ -1133,121 +1205,148 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="setting-row">
-              <span>对战模式</span>
-              <div className="mode-switch">
-                <button
-                  className={mode === "ai" ? "selected" : ""}
-                  onClick={() => changeMode("ai")}
-                >
-                  对战 AI
-                </button>
-                <button
-                  className={mode === "local" ? "selected" : ""}
-                  onClick={() => changeMode("local")}
-                >
-                  双人
-                </button>
-              </div>
-            </div>
+            {showRulebook ? (
+              <Rulebook onBack={() => setShowRulebook(false)} />
+            ) : (
+              <>
+                <div className="setting-row">
+                  <span>对战模式</span>
+                  <div className="mode-switch">
+                    <button
+                      className={mode === "ai" ? "selected" : ""}
+                      onClick={() => changeMode("ai")}
+                    >
+                      对战 AI
+                    </button>
+                    <button
+                      className={mode === "local" ? "selected" : ""}
+                      onClick={() => changeMode("local")}
+                    >
+                      双人
+                    </button>
+                  </div>
+                </div>
 
-            <div className="setting-row">
-              <span>先手</span>
-              <div className="mode-switch first-switch">
-                <button
-                  className={firstChoice === "blue" ? "selected" : ""}
-                  onClick={() => changeFirstPlayer("blue")}
-                >
-                  {mode === "ai" ? "我" : "青方"}
-                </button>
-                <button
-                  className={firstChoice === "red" ? "selected" : ""}
-                  onClick={() => changeFirstPlayer("red")}
-                >
-                  {mode === "ai" ? "AI" : "赤方"}
-                </button>
-                <button
-                  className={firstChoice === "random" ? "selected" : ""}
-                  onClick={() => changeFirstPlayer("random")}
-                >
-                  随机
-                </button>
-              </div>
-            </div>
+                <div className="setting-row">
+                  <span>执红</span>
+                  {mode === "ai" ? (
+                    <div className="mode-switch first-switch">
+                      <button
+                        className={firstChoice === "human" ? "selected" : ""}
+                        onClick={() => changeFirstPlayer("human")}
+                      >
+                        我
+                      </button>
+                      <button
+                        className={firstChoice === "ai" ? "selected" : ""}
+                        onClick={() => changeFirstPlayer("ai")}
+                      >
+                        AI
+                      </button>
+                      <button
+                        className={firstChoice === "random" ? "selected" : ""}
+                        onClick={() => changeFirstPlayer("random")}
+                      >
+                        随机
+                      </button>
+                    </div>
+                  ) : (
+                    <strong className="fixed-first">红棋固定先手</strong>
+                  )}
+                </div>
 
-            {mode === "ai" && (
-              <div className="setting-row">
-                <span>
-                  AI 风格
-                  {aiStyle === "random" &&
-                    `（本局${STRATEGY_LABELS[activeAiStyle]}）`}
-                  <small>
-                    {
-                      STRATEGY_DESCRIPTIONS[
-                        aiStyle === "random" ? activeAiStyle : aiStyle
-                      ]
-                    }
-                  </small>
-                </span>
-                <select
-                  className="settings-select"
-                  value={aiStyle}
-                  onChange={(event) =>
-                    changeAiStyle(event.target.value as AiStyle)
-                  }
+                {mode === "ai" && (
+                  <div className="setting-row">
+                    <span>
+                      AI 风格
+                      {aiStyle === "random" &&
+                        `（本局${STRATEGY_LABELS[activeAiStyle]}）`}
+                      <small>
+                        {
+                          STRATEGY_DESCRIPTIONS[
+                            aiStyle === "random" ? activeAiStyle : aiStyle
+                          ]
+                        }
+                      </small>
+                    </span>
+                    <select
+                      className="settings-select"
+                      value={aiStyle}
+                      onChange={(event) =>
+                        changeAiStyle(event.target.value as AiStyle)
+                      }
+                    >
+                      <option value="balanced">均衡</option>
+                      <option value="aggressive">猛攻</option>
+                      <option value="defensive">结阵</option>
+                      <option value="territorial">控场</option>
+                      <option value="random">随机</option>
+                    </select>
+                  </div>
+                )}
+
+                <div className="setting-row">
+                  <span>势力配色</span>
+                  <div className="setting-options">
+                    {([
+                      ["standard", "标准"],
+                      ["vivid", "鲜亮"],
+                      ["accessible", "辨色辅助"],
+                    ] as const).map(([theme, label]) => (
+                      <button
+                        key={theme}
+                        className={colorTheme === theme ? "selected" : ""}
+                        onClick={() => setColorTheme(theme)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="setting-row">
+                  <span>棋子显示</span>
+                  <div className="setting-options">
+                    <button
+                      className={pieceDisplay === "mark" ? "selected" : ""}
+                      onClick={() => setPieceDisplay("mark")}
+                    >
+                      文字
+                    </button>
+                    <button
+                      className={pieceDisplay === "icon" ? "selected" : ""}
+                      onClick={() => setPieceDisplay("icon")}
+                    >
+                      图标
+                    </button>
+                    <button
+                      className={pieceDisplay === "range" ? "selected" : ""}
+                      onClick={() => setPieceDisplay("range")}
+                    >
+                      范围图
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  className="settings-rulebook-link"
+                  onClick={() => setShowRulebook(true)}
                 >
-                  <option value="balanced">均衡</option>
-                  <option value="aggressive">猛攻</option>
-                  <option value="defensive">结阵</option>
-                  <option value="territorial">控场</option>
-                  <option value="random">随机</option>
-                </select>
-              </div>
+                  <span>
+                    <strong>规则书</strong>
+                    <small>布阵、棋子范围、清算与胜负</small>
+                  </span>
+                  <b aria-hidden="true">›</b>
+                </button>
+
+                <button
+                  className="primary-button settings-done"
+                  onClick={() => setShowSettings(false)}
+                >
+                  完成
+                </button>
+              </>
             )}
-
-            <div className="setting-row">
-              <span>势力配色</span>
-              <div className="setting-options">
-                {([
-                  ["standard", "标准"],
-                  ["vivid", "鲜亮"],
-                  ["accessible", "辨色辅助"],
-                ] as const).map(([theme, label]) => (
-                  <button
-                    key={theme}
-                    className={colorTheme === theme ? "selected" : ""}
-                    onClick={() => setColorTheme(theme)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="setting-row">
-              <span>棋子显示</span>
-              <div className="setting-options">
-                <button
-                  className={pieceDisplay === "mark" ? "selected" : ""}
-                  onClick={() => setPieceDisplay("mark")}
-                >
-                  文字
-                </button>
-                <button
-                  className={pieceDisplay === "range" ? "selected" : ""}
-                  onClick={() => setPieceDisplay("range")}
-                >
-                  范围图
-                </button>
-              </div>
-            </div>
-
-            <button
-              className="primary-button settings-done"
-              onClick={() => setShowSettings(false)}
-            >
-              完成
-            </button>
           </section>
         </div>
       )}
@@ -1346,6 +1445,192 @@ function RangeIcon({ type }: { type: PieceType }) {
   );
 }
 
+function Rulebook({ onBack }: { onBack: () => void }) {
+  const pieceRules: { type: PieceType; rule: string }[] = [
+    { type: "scout", rule: "控制斜向相邻的 4 格" },
+    { type: "guard", rule: "控制上下左右相邻的 4 格" },
+    { type: "archer", rule: "控制上下左右正好相距 2 格的位置" },
+    {
+      type: "cannon",
+      rule: "每个直线方向须先隔过一枚棋子，再控制其后的格子，直到并包括遇到的下一枚棋子",
+    },
+    { type: "knight", rule: "控制“日”字形的 8 个落点" },
+    { type: "fortress", rule: "控制周围相邻的 8 格" },
+  ];
+
+  return (
+    <div className="rulebook">
+      <section className="rulebook-intro">
+        <strong>目标</strong>
+        <p>
+          双方完成布阵后进行连锁清算。清算结束时，存活棋子较多的一方获胜。
+        </p>
+      </section>
+
+      <section>
+        <h3><span>01</span> 布阵</h3>
+        <ol>
+          <li>棋盘为 7×7，双方各有 10 枚棋子。</li>
+          <li>红方先手，双方轮流在任意空格放置 1 枚棋子。</li>
+          <li>棋子放下后不能移动；全部 20 枚放完才开始清算。</li>
+        </ol>
+      </section>
+
+      <section>
+        <h3><span>02</span> 攻击与支援</h3>
+        <ul>
+          <li>每枚棋子的攻击范围与支援范围相同。</li>
+          <li>范围内每有 1 枚敌棋，便对它造成 1 次攻击；每有 1 枚友棋，便为它提供 1 次支援。</li>
+          <li><b>危险值 = 被攻击次数 − 受支援次数。</b>危险值大于 0 的棋子会在清算中被移除。</li>
+          <li>棋盘边缘会截断超出棋盘的控制范围。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3><span>03</span> 棋子与范围</h3>
+        <div className="rulebook-pieces">
+          {pieceRules.map(({ type, rule }) => (
+            <article key={type}>
+              <div className="rulebook-piece-icon">
+                <RangeIcon type={type} />
+              </div>
+              <div>
+                <strong>
+                  {PIECES[type].name}
+                  <small>×{PIECES[type].count}</small>
+                </strong>
+                <p>{rule}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+        <p className="rulebook-note">
+          炮台的第一枚棋子只是“炮架”，不受炮台控制。棋子被移除后，炮台范围会立即重新计算。
+        </p>
+      </section>
+
+      <section>
+        <h3><span>04</span> 连锁清算</h3>
+        <ol>
+          <li>计算场上每枚棋子的危险值。</li>
+          <li>找出危险值最高且大于 0 的棋子；若有并列，同时移除。</li>
+          <li>根据剩余棋子重新计算所有攻击、支援和炮台范围。</li>
+          <li>重复以上步骤，直到没有棋子的危险值大于 0。</li>
+        </ol>
+      </section>
+
+      <section>
+        <h3><span>05</span> 胜负与控制格</h3>
+        <ol>
+          <li>先比较存活棋子数量，多者获胜。</li>
+          <li>若棋子数相同，再比较最终控制格数量。</li>
+          <li>每格比较双方施加的控制次数：红多为红格，青多为青格，相同为灰格；双方都未控制的格子不计分。</li>
+          <li>控制格也相同则为平局。</li>
+        </ol>
+      </section>
+
+      <button className="primary-button rulebook-back" onClick={onBack}>
+        返回设置
+      </button>
+    </div>
+  );
+}
+
+function PieceIcon({ type }: { type: PieceType }) {
+  if (type === "scout") {
+    return (
+      <svg
+        className="piece-icon icon-scout"
+        viewBox="0 0 64 64"
+        aria-hidden="true"
+      >
+        <g transform="rotate(42 32 32)">
+          <path
+            fill="currentColor"
+            d="M32 3 39 15 34 20v35h-4V20l-5-5 7-12Z"
+          />
+          <path fill="currentColor" d="m32 61-5-6h10l-5 6Z" />
+        </g>
+        <g transform="rotate(-42 32 32)">
+          <path
+            fill="currentColor"
+            d="M32 3 39 15 34 20v35h-4V20l-5-5 7-12Z"
+          />
+          <path fill="currentColor" d="m32 61-5-6h10l-5 6Z" />
+        </g>
+      </svg>
+    );
+  }
+
+  if (type === "archer") {
+    return (
+      <svg
+        className="piece-icon icon-archer"
+        viewBox="0 0 64 64"
+        aria-hidden="true"
+      >
+        <path
+          d="M29 6C43 20 43 44 29 58"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+        <path
+          d="m29 6-17 26 17 26"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M12 32h43"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+        <path fill="currentColor" d="m60 32-9-6v12l9-6Z" />
+        <path
+          d="m23 32-9-6m9 6-9 6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
+
+  if (type === "fortress") {
+    return (
+      <span
+        className="piece-icon icon-fortress"
+        aria-hidden="true"
+      >
+        <i className="icon-primary" />
+        <i className="icon-secondary" />
+        <i className="icon-tertiary" />
+      </span>
+    );
+  }
+
+  const Icon = PIECE_ICONS[type];
+  return <Icon className={`piece-icon icon-${type}`} aria-hidden="true" />;
+}
+
+function PieceFace({
+  type,
+  display,
+}: {
+  type: PieceType;
+  display: PieceDisplay;
+}) {
+  if (display === "range") return <RangeIcon type={type} />;
+  if (display === "icon") return <PieceIcon type={type} />;
+  return <span className="piece-mark">{PIECES[type].mark}</span>;
+}
+
 function Inventory({
   player,
   currentPlayer,
@@ -1383,11 +1668,7 @@ function Inventory({
             aria-label={`${PLAYER_NAMES[player]}选择${definition.name}，剩余 ${inventory[type]} 枚`}
           >
             <span className={`mini-piece ${player}`}>
-              {pieceDisplay === "mark" ? (
-                definition.mark
-              ) : (
-                <RangeIcon type={type} />
-              )}
+              <PieceFace type={type} display={pieceDisplay} />
             </span>
             <span className="piece-copy">
               <strong>{definition.name}</strong>
