@@ -10,6 +10,7 @@ type Player = (typeof PLAYER_ORDER)[number];
 type PieceType = "scout" | "guard" | "archer" | "knight" | "fortress";
 type Phase = "placement" | "ready" | "settling" | "finished";
 type GameMode = "ai" | "local";
+type ColorTheme = "standard" | "vivid" | "accessible";
 
 type Piece = {
   id: number;
@@ -277,6 +278,7 @@ export default function Home() {
   const [history, setHistory] = useState<string[]>([]);
   const [mode, setMode] = useState<GameMode>("ai");
   const [aiThinking, setAiThinking] = useState(false);
+  const [colorTheme, setColorTheme] = useState<ColorTheme>("standard");
 
   const stats = useMemo(() => getStats(pieces), [pieces]);
   const boardPieces = useMemo(
@@ -543,7 +545,7 @@ export default function Home() {
           : `赤方剩余 ${redAlive} 枚 · 青方剩余 ${blueAlive} 枚`;
 
   return (
-    <main className="game-shell">
+    <main className={`game-shell theme-${colorTheme}`}>
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">衡</span>
@@ -688,13 +690,27 @@ export default function Home() {
                 开始清算
               </button>
             )}
-            {phase === "placement" && (
-              <div className="range-legend">
-                <span><i className="legend-square danger">!</i>敌方威胁</span>
-                <span><i className="legend-square support">+</i>己方支援</span>
-                <span><i className="legend-square balanced">=</i>势均力敌</span>
-              </div>
-            )}
+            <div className="range-legend">
+              <span><i className="legend-square danger">!</i>敌方威胁</span>
+              <span><i className="legend-square support">+</i>己方支援</span>
+              <span><i className="legend-square balanced">=</i>势均力敌</span>
+            </div>
+          </div>
+          <div className="palette-picker" aria-label="势力配色">
+            <span>势力配色</span>
+            {([
+              ["standard", "标准"],
+              ["vivid", "鲜亮"],
+              ["accessible", "辨色辅助"],
+            ] as const).map(([theme, label]) => (
+              <button
+                key={theme}
+                className={colorTheme === theme ? "selected" : ""}
+                onClick={() => setColorTheme(theme)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 
