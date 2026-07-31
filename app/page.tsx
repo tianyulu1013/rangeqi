@@ -11,6 +11,7 @@ type PieceType = "scout" | "guard" | "archer" | "knight" | "fortress";
 type Phase = "placement" | "ready" | "settling" | "finished";
 type GameMode = "ai" | "local";
 type ColorTheme = "standard" | "vivid" | "accessible";
+type AiStyle = "balanced" | "aggressive" | "defensive" | "territorial";
 
 type Piece = {
   id: number;
@@ -148,20 +149,65 @@ function getStats(pieces: Piece[]) {
   return result;
 }
 
-function evaluateForRed(pieces: Piece[]) {
+function getInfluence(pieces: Piece[]) {
+  const cells = new Map<string, { red: number; blue: number }>();
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    for (let col = 0; col < BOARD_SIZE; col += 1) {
+      cells.set(cellKey(row, col), { red: 0, blue: 0 });
+    }
+  }
+  for (const piece of pieces) {
+    for (const [dr, dc] of PIECES[piece.type].offsets) {
+      const row = piece.row + dr;
+      const col = piece.col + dc;
+      if (!withinBoard(row, col)) continue;
+      const value = cells.get(cellKey(row, col));
+      if (value) value[piece.player] += 1;
+    }
+  }
+  return cells;
+}
+
+function countControlledCells(pieces: Piece[]) {
+  const influence = getInfluence(pieces);
+  let red = 0;
+  let blue = 0;
+  let neutral = 0;
+  for (const value of influence.values()) {
+    if (value.red > value.blue) red += 1;
+    else if (value.blue > value.red) blue += 1;
+    else neutral += 1;
+  }
+  return { red, blue, neutral };
+}
+
+const AI_WEIGHTS: Record<
+  AiStyle,
+  { attack: number; safety: number; support: number; territory: number }
+> = {
+  balanced: { attack: 3.4, safety: 3.5, support: 0.65, territory: 0.22 },
+  aggressive: { attack: 5.2, safety: 2.1, support: 0.35, territory: 0.12 },
+  defensive: { attack: 2.2, safety: 5.4, support: 1.05, territory: 0.16 },
+  territorial: { attack: 2.8, safety: 3.1, support: 0.55, territory: 0.9 },
+};
+
+function evaluateForRed(pieces: Piece[], style: AiStyle) {
   const stats = getStats(pieces);
+  const weights = AI_WEIGHTS[style];
   let score = 0;
 
   for (const piece of pieces) {
     const pieceStats = stats.get(piece.id);
     if (!pieceStats) continue;
-    const pressure =
-      pieceStats.danger > 0 ? pieceStats.danger * 3.4 : pieceStats.danger;
-    const formation = pieceStats.supports * 0.55 + pieceStats.attacks * 0.7;
-    score +=
-      piece.player === "red"
-        ? -pressure + formation
-        : pressure - formation;
+    const exposed = Math.max(0, pieceStats.danger);
+    if (piece.player === "red") {
+      score -= exposed * weights.safety;
+      score += pieceStats.supports * weights.support;
+      score += Math.max(0, -pieceStats.danger) * 0.32;
+    } else {
+      score += exposed * weights.attack;
+      score -= pieceStats.supports * weights.support * 0.55;
+    }
   }
 
   const center = (BOARD_SIZE - 1) / 2;
@@ -172,6 +218,9 @@ function evaluateForRed(pieces: Piece[]) {
     score += (piece.player === "red" ? 1 : -1) * centrality * 0.035;
   }
 
+  const control = countControlledCells(pieces);
+  score += (control.red - control.blue) * weights.territory;
+
   return score;
 }
 
@@ -179,6 +228,7 @@ function chooseAiMove(
   pieces: Piece[],
   redInventory: Record<PieceType, number>,
   blueInventory: Record<PieceType, number>,
+  style: AiStyle,
 ) {
   const occupied = new Set(
     pieces.map((piece) => cellKey(piece.row, piece.col)),
@@ -207,7 +257,7 @@ function chooseAiMove(
           type,
           row,
           col,
-          score: evaluateForRed(imagined),
+          score: evaluateForRed(imagined, style),
         });
       }
     }
@@ -249,7 +299,7 @@ function chooseAiMove(
           };
           strongestBlueReply = Math.min(
             strongestBlueReply,
-            evaluateForRed([...afterRed, blueReply]),
+            evaluateForRed([...afterRed, blueReply], style),
           );
         }
       }
@@ -279,30 +329,15 @@ export default function Home() {
   const [mode, setMode] = useState<GameMode>("ai");
   const [aiThinking, setAiThinking] = useState(false);
   const [colorTheme, setColorTheme] = useState<ColorTheme>("standard");
+  const [aiStyle, setAiStyle] = useState<AiStyle>("balanced");
+  const [showResult, setShowResult] = useState(false);
 
   const stats = useMemo(() => getStats(pieces), [pieces]);
   const boardPieces = useMemo(
     () => new Map(pieces.map((piece) => [cellKey(piece.row, piece.col), piece])),
     [pieces],
   );
-  const influence = useMemo(() => {
-    const cells = new Map<string, { red: number; blue: number }>();
-    for (let row = 0; row < BOARD_SIZE; row += 1) {
-      for (let col = 0; col < BOARD_SIZE; col += 1) {
-        cells.set(cellKey(row, col), { red: 0, blue: 0 });
-      }
-    }
-    for (const piece of pieces) {
-      for (const [dr, dc] of PIECES[piece.type].offsets) {
-        const row = piece.row + dr;
-        const col = piece.col + dc;
-        if (!withinBoard(row, col)) continue;
-        const value = cells.get(cellKey(row, col));
-        if (value) value[piece.player] += 1;
-      }
-    }
-    return cells;
-  }, [pieces]);
+  const influence = useMemo(() => getInfluence(pieces), [pieces]);
 
   const inventory = useMemo(() => {
     const counts: Record<Player, Record<PieceType, number>> = {
@@ -337,6 +372,23 @@ export default function Home() {
   const inspected = pieces.find((piece) => piece.id === inspectedId) ?? null;
   const redAlive = pieces.filter((piece) => piece.player === "red").length;
   const blueAlive = pieces.filter((piece) => piece.player === "blue").length;
+  const controlled = useMemo(() => countControlledCells(pieces), [pieces]);
+  const winner: Player | null =
+    redAlive !== blueAlive
+      ? redAlive > blueAlive
+        ? "red"
+        : "blue"
+      : controlled.red !== controlled.blue
+        ? controlled.red > controlled.blue
+          ? "red"
+          : "blue"
+        : null;
+  const winReason =
+    redAlive !== blueAlive
+      ? "存活棋子更多"
+      : controlled.red !== controlled.blue
+        ? "棋子数相同，以控制格数决胜"
+        : "棋子数与控制格数完全相同";
 
   useEffect(() => {
     if (
@@ -350,7 +402,12 @@ export default function Home() {
 
     setAiThinking(true);
     const timer = window.setTimeout(() => {
-      const move = chooseAiMove(pieces, inventory.red, inventory.blue);
+      const move = chooseAiMove(
+        pieces,
+        inventory.red,
+        inventory.blue,
+        aiStyle,
+      );
       if (!move) {
         setAiThinking(false);
         return;
@@ -385,6 +442,7 @@ export default function Home() {
     return () => window.clearTimeout(timer);
   }, [
     currentPlayer,
+    aiStyle,
     inventory,
     mode,
     phase,
@@ -421,6 +479,7 @@ export default function Home() {
 
     if (maxDanger <= 0) {
       setPhase("finished");
+      setShowResult(true);
       setHistory((current) => ["清算结束：场上已没有危险值大于 0 的棋子", ...current]);
       return;
     }
@@ -508,6 +567,7 @@ export default function Home() {
     setRound(0);
     setHistory([]);
     setAiThinking(false);
+    setShowResult(false);
   }
 
   function changeMode(nextMode: GameMode) {
@@ -519,6 +579,7 @@ export default function Home() {
     setInspectedId(null);
     setHistory(["开始清算：每轮同时移除危险值最高的棋子"]);
     setRound(0);
+    setShowResult(false);
     setPhase("settling");
   }
 
@@ -531,9 +592,9 @@ export default function Home() {
         ? "布阵完成"
         : phase === "settling"
           ? `正在清算 · 第 ${Math.max(round, 1)} 轮`
-          : redAlive === blueAlive
-            ? "本局平衡"
-            : `${redAlive > blueAlive ? "赤方" : "青方"}获胜`;
+          : winner
+            ? `${PLAYER_NAMES[winner]}获胜`
+            : "本局平局";
 
   const subtitle =
     phase === "placement"
@@ -542,7 +603,7 @@ export default function Home() {
         ? "可以检查棋子的攻防状态，然后开始连锁清算"
         : phase === "settling"
           ? "高亮棋子即将同时离场"
-          : `赤方剩余 ${redAlive} 枚 · 青方剩余 ${blueAlive} 枚`;
+          : `棋子 赤 ${redAlive} : ${blueAlive} 青 · 控制 赤 ${controlled.red} : ${controlled.blue} 青`;
 
   return (
     <main className={`game-shell theme-${colorTheme}`}>
@@ -598,6 +659,31 @@ export default function Home() {
             isComputer={mode === "ai"}
             onChoose={chooseType}
           />
+          {mode === "ai" && (
+            <div className="ai-style-picker">
+              <div className="ai-style-heading">
+                <span>本地策略引擎</span>
+                <strong>AI 风格</strong>
+              </div>
+              <div className="ai-style-options">
+                {([
+                  ["balanced", "均衡"],
+                  ["aggressive", "猛攻"],
+                  ["defensive", "结阵"],
+                  ["territorial", "控场"],
+                ] as const).map(([style, label]) => (
+                  <button
+                    key={style}
+                    className={aiStyle === style ? "selected" : ""}
+                    disabled={phase !== "placement" || aiThinking}
+                    onClick={() => setAiStyle(style)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </aside>
 
         <div className="board-column">
@@ -690,6 +776,14 @@ export default function Home() {
                 开始清算
               </button>
             )}
+            {phase === "finished" && (
+              <button
+                className="primary-button"
+                onClick={() => setShowResult(true)}
+              >
+                查看胜负
+              </button>
+            )}
             <div className="range-legend">
               <span><i className="legend-square danger">!</i>敌方威胁</span>
               <span><i className="legend-square support">+</i>己方支援</span>
@@ -780,6 +874,61 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      {phase === "finished" && showResult && (
+        <div className="result-overlay" role="presentation">
+          <section
+            className={`result-card ${winner ?? "draw"}`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="result-title"
+          >
+            <p className="result-kicker">最终结算</p>
+            <div className="result-emblem">{winner ? "胜" : "和"}</div>
+            <h2 id="result-title">
+              {winner ? `${PLAYER_NAMES[winner]}获胜` : "本局平局"}
+            </h2>
+            <p className="result-reason">{winReason}</p>
+
+            <div className="result-scoreboard">
+              <div>
+                <span className="score-dot red" />
+                <strong>赤方</strong>
+                <small>AI</small>
+              </div>
+              <div className="score-category">
+                <span>存活棋子</span>
+                <strong>
+                  {redAlive}<i>:</i>{blueAlive}
+                </strong>
+              </div>
+              <div className="score-category">
+                <span>控制格数</span>
+                <strong>
+                  {controlled.red}<i>:</i>{controlled.blue}
+                </strong>
+              </div>
+              <div>
+                <span className="score-dot blue" />
+                <strong>青方</strong>
+                <small>你</small>
+              </div>
+            </div>
+
+            <div className="result-actions">
+              <button
+                className="secondary-button"
+                onClick={() => setShowResult(false)}
+              >
+                查看棋盘
+              </button>
+              <button className="primary-button" onClick={reset}>
+                再来一局
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }
