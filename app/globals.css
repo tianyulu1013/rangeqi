@@ -118,13 +118,43 @@ button {
 }
 
 .quiet-button {
-  justify-self: end;
   color: rgba(246, 240, 228, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 999px;
   background: transparent;
   padding: 9px 16px;
   cursor: pointer;
+}
+
+.header-actions {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mode-switch {
+  display: flex;
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.mode-switch button {
+  color: rgba(246, 240, 228, 0.5);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.mode-switch button.selected {
+  color: #151d1c;
+  background: var(--gold);
+  font-weight: 700;
 }
 
 .quiet-button:hover {
@@ -185,6 +215,19 @@ button {
   font-family: "STKaiti", "KaiTi", serif;
   font-size: 22px;
   font-weight: 500;
+}
+
+.player-heading h2 em {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 5px;
+  color: #b7e4e2;
+  border: 1px solid rgba(72, 169, 171, 0.4);
+  border-radius: 999px;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 8px;
+  font-style: normal;
+  vertical-align: middle;
 }
 
 .player-heading > strong {
@@ -599,9 +642,12 @@ button {
     border-top: 1px solid rgba(255,255,255,0.08);
   }
 
-  .quiet-button {
+  .header-actions {
     grid-column: 2;
     grid-row: 1;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
   }
 
   .game-layout {

@@ -9,6 +9,7 @@ const PLAYER_ORDER = ["red", "blue"] as const;
 type Player = (typeof PLAYER_ORDER)[number];
 type PieceType = "scout" | "guard" | "archer" | "knight" | "fortress";
 type Phase = "placement" | "ready" | "settling" | "finished";
+type GameMode = "ai" | "local";
 
 type Piece = {
   id: number;
@@ -146,6 +147,58 @@ function getStats(pieces: Piece[]) {
   return result;
 }
 
+function chooseAiMove(
+  pieces: Piece[],
+  inventory: Record<PieceType, number>,
+) {
+  const occupied = new Set(
+    pieces.map((piece) => cellKey(piece.row, piece.col)),
+  );
+  const candidates: {
+    type: PieceType;
+    row: number;
+    col: number;
+    score: number;
+  }[] = [];
+  const center = (BOARD_SIZE - 1) / 2;
+
+  for (const type of PIECE_TYPES) {
+    if (inventory[type] <= 0) continue;
+    for (let row = 0; row < BOARD_SIZE; row += 1) {
+      for (let col = 0; col < BOARD_SIZE; col += 1) {
+        if (occupied.has(cellKey(row, col))) continue;
+        const candidate: Piece = {
+          id: -1,
+          player: "blue",
+          type,
+          row,
+          col,
+        };
+        const imagined = [...pieces, candidate];
+        const imaginedStats = getStats(imagined);
+        let score = 0;
+
+        for (const piece of imagined) {
+          const danger = imaginedStats.get(piece.id)?.danger ?? 0;
+          score += piece.player === "red" ? danger : -danger;
+        }
+
+        const candidateStats = imaginedStats.get(candidate.id);
+        score += (candidateStats?.attacks ?? 0) * 1.6;
+        score += (candidateStats?.supports ?? 0) * 1.25;
+        score -=
+          (Math.abs(row - center) + Math.abs(col - center)) * 0.055;
+        score += Math.random() * 0.18;
+        candidates.push({ type, row, col, score });
+      }
+    }
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  const shortlist = candidates.slice(0, Math.min(4, candidates.length));
+  return shortlist[Math.floor(Math.random() * shortlist.length)] ?? null;
+}
+
 export default function Home() {
   const [pieces, setPieces] = useState<Piece[]>([]);
   const [currentPlayer, setCurrentPlayer] = useState<Player>("red");
@@ -156,6 +209,8 @@ export default function Home() {
   const [pendingIds, setPendingIds] = useState<number[]>([]);
   const [round, setRound] = useState(0);
   const [history, setHistory] = useState<string[]>([]);
+  const [mode, setMode] = useState<GameMode>("ai");
+  const [aiThinking, setAiThinking] = useState(false);
 
   const stats = useMemo(() => getStats(pieces), [pieces]);
   const boardPieces = useMemo(
@@ -198,6 +253,60 @@ export default function Home() {
   const blueAlive = pieces.filter((piece) => piece.player === "blue").length;
 
   useEffect(() => {
+    if (
+      mode !== "ai" ||
+      phase !== "placement" ||
+      currentPlayer !== "blue"
+    ) {
+      setAiThinking(false);
+      return;
+    }
+
+    setAiThinking(true);
+    const timer = window.setTimeout(() => {
+      const move = chooseAiMove(pieces, inventory.blue);
+      if (!move) {
+        setAiThinking(false);
+        return;
+      }
+
+      const placed: Piece = {
+        id: Date.now() + pieces.length,
+        player: "blue",
+        type: move.type,
+        row: move.row,
+        col: move.col,
+      };
+      const nextPieces = [...pieces, placed];
+      setPieces(nextPieces);
+      setInspectedId(placed.id);
+      setAiThinking(false);
+
+      if (nextPieces.length === PIECES_PER_PLAYER * 2) {
+        setPhase("ready");
+        setHoverCell(null);
+      } else {
+        setCurrentPlayer("red");
+        if (inventory.red[selectedType] <= 0) {
+          const available = PIECE_TYPES.find(
+            (type) => inventory.red[type] > 0,
+          );
+          if (available) setSelectedType(available);
+        }
+      }
+    }, 520);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    currentPlayer,
+    inventory,
+    mode,
+    phase,
+    pieces,
+    selectedType,
+  ]);
+
+  useEffect(() => {
     if (phase !== "settling") return;
 
     if (pendingIds.length > 0) {
@@ -238,7 +347,11 @@ export default function Home() {
   }, [pendingIds, phase, pieces, round]);
 
   function chooseType(type: PieceType) {
-    if (phase !== "placement" || inventory[currentPlayer][type] <= 0) return;
+    if (
+      phase !== "placement" ||
+      aiThinking ||
+      inventory[currentPlayer][type] <= 0
+    ) return;
     setSelectedType(type);
     setInspectedId(null);
   }
@@ -249,7 +362,12 @@ export default function Home() {
       setInspectedId(existing.id);
       return;
     }
-    if (phase !== "placement" || inventory[currentPlayer][selectedType] <= 0) {
+    if (
+      phase !== "placement" ||
+      aiThinking ||
+      (mode === "ai" && currentPlayer === "blue") ||
+      inventory[currentPlayer][selectedType] <= 0
+    ) {
       return;
     }
 
@@ -281,12 +399,14 @@ export default function Home() {
   }
 
   function undo() {
-    if (phase !== "placement" && phase !== "ready") return;
-    const last = pieces.at(-1);
+    if ((phase !== "placement" && phase !== "ready") || aiThinking) return;
+    const steps = mode === "ai" && pieces.length >= 2 ? 2 : 1;
+    const nextPieces = pieces.slice(0, -steps);
+    const last = pieces[nextPieces.length];
     if (!last) return;
-    setPieces((current) => current.slice(0, -1));
-    setCurrentPlayer(last.player);
-    setSelectedType(last.type);
+    setPieces(nextPieces);
+    setCurrentPlayer(mode === "ai" ? "red" : last.player);
+    if (mode === "local" || last.player === "red") setSelectedType(last.type);
     setInspectedId(null);
     setPhase("placement");
   }
@@ -301,6 +421,12 @@ export default function Home() {
     setPendingIds([]);
     setRound(0);
     setHistory([]);
+    setAiThinking(false);
+  }
+
+  function changeMode(nextMode: GameMode) {
+    setMode(nextMode);
+    reset();
   }
 
   function startSettlement() {
@@ -312,7 +438,9 @@ export default function Home() {
 
   const title =
     phase === "placement"
-      ? `${PLAYER_NAMES[currentPlayer]}布阵`
+      ? aiThinking
+        ? "青方 AI 正在推演"
+        : `${PLAYER_NAMES[currentPlayer]}布阵`
       : phase === "ready"
         ? "布阵完成"
         : phase === "settling"
@@ -344,9 +472,25 @@ export default function Home() {
           <strong>{title}</strong>
           <span>{subtitle}</span>
         </div>
-        <button className="quiet-button" onClick={reset}>
-          重新开始
-        </button>
+        <div className="header-actions">
+          <div className="mode-switch" aria-label="对战模式">
+            <button
+              className={mode === "ai" ? "selected" : ""}
+              onClick={() => changeMode("ai")}
+            >
+              对战 AI
+            </button>
+            <button
+              className={mode === "local" ? "selected" : ""}
+              onClick={() => changeMode("local")}
+            >
+              双人
+            </button>
+          </div>
+          <button className="quiet-button" onClick={reset}>
+            重新开始
+          </button>
+        </div>
       </header>
 
       <section className="game-layout">
@@ -365,6 +509,7 @@ export default function Home() {
             inventory={inventory.red}
             selectedType={selectedType}
             phase={phase}
+            isComputer={false}
             onChoose={chooseType}
           />
         </aside>
@@ -425,7 +570,7 @@ export default function Home() {
           <div className="board-actions">
             <button
               className="secondary-button"
-              disabled={pieces.length === 0 || phase === "settling" || phase === "finished"}
+              disabled={pieces.length === 0 || aiThinking || phase === "settling" || phase === "finished"}
               onClick={undo}
             >
               撤回一步
@@ -438,7 +583,7 @@ export default function Home() {
             {phase === "placement" && (
               <div className="range-legend">
                 <span className="legend-square" />
-                鼠标经过空格可预览范围
+              鼠标经过空格可预览范围
               </div>
             )}
           </div>
@@ -449,7 +594,7 @@ export default function Home() {
             <span className="player-dot" />
             <div>
               <span>后手</span>
-              <h2>青方</h2>
+              <h2>青方 {mode === "ai" && <em>AI</em>}</h2>
             </div>
             <strong>{blueAlive}</strong>
           </div>
@@ -459,6 +604,7 @@ export default function Home() {
             inventory={inventory.blue}
             selectedType={selectedType}
             phase={phase}
+            isComputer={mode === "ai"}
             onChoose={chooseType}
           />
         </aside>
@@ -519,6 +665,7 @@ function Inventory({
   inventory,
   selectedType,
   phase,
+  isComputer,
   onChoose,
 }: {
   player: Player;
@@ -526,6 +673,7 @@ function Inventory({
   inventory: Record<PieceType, number>;
   selectedType: PieceType;
   phase: Phase;
+  isComputer: boolean;
   onChoose: (type: PieceType) => void;
 }) {
   return (
@@ -535,6 +683,7 @@ function Inventory({
         const enabled =
           phase === "placement" &&
           player === currentPlayer &&
+          !isComputer &&
           inventory[type] > 0;
         return (
           <button
