@@ -8,7 +8,7 @@ const projectRoot = resolve(staticRoot, "..");
 
 export default defineConfig({
   root: staticRoot,
-  base: "/rangeqi/",
+  base: "./",
   plugins: [react()],
   css: {
     postcss: resolve(projectRoot, "postcss.config.mjs"),

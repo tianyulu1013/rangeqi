@@ -352,6 +352,7 @@ export default function Home() {
   const [selectedType, setSelectedType] = useState<PieceType>("scout");
   const [phase, setPhase] = useState<Phase>("placement");
   const [hoverCell, setHoverCell] = useState<[number, number] | null>(null);
+  const [previewCell, setPreviewCell] = useState<[number, number] | null>(null);
   const [inspectedId, setInspectedId] = useState<number | null>(null);
   const [pendingIds, setPendingIds] = useState<number[]>([]);
   const [round, setRound] = useState(0);
@@ -364,6 +365,7 @@ export default function Home() {
     useState<StrategyStyle>("balanced");
   const [showResult, setShowResult] = useState(false);
   const [pieceDisplay, setPieceDisplay] = useState<PieceDisplay>("mark");
+  const [showSettings, setShowSettings] = useState(false);
 
   const stats = useMemo(() => getStats(pieces), [pieces]);
   const boardPieces = useMemo(
@@ -390,8 +392,9 @@ export default function Home() {
 
   const highlighted = useMemo(() => {
     const cells = new Set<string>();
-    if (phase !== "placement" || !hoverCell) return cells;
-    const [row, col] = hoverCell;
+    const focusCell = previewCell ?? hoverCell;
+    if (phase !== "placement" || !focusCell) return cells;
+    const [row, col] = focusCell;
     for (const [dr, dc] of PIECES[selectedType].offsets) {
       const nextRow = row + dr;
       const nextCol = col + dc;
@@ -400,7 +403,7 @@ export default function Home() {
       }
     }
     return cells;
-  }, [hoverCell, phase, selectedType]);
+  }, [hoverCell, phase, previewCell, selectedType]);
 
   const inspected = pieces.find((piece) => piece.id === inspectedId) ?? null;
   const redAlive = pieces.filter((piece) => piece.player === "red").length;
@@ -422,6 +425,12 @@ export default function Home() {
       : controlled.red !== controlled.blue
         ? "棋子数相同，以控制格数决胜"
         : "棋子数与控制格数完全相同";
+  const opponentPlayer: Player =
+    mode === "ai"
+      ? "red"
+      : currentPlayer === "blue"
+        ? "red"
+        : "blue";
 
   useEffect(() => {
     if (
@@ -532,12 +541,14 @@ export default function Home() {
     ) return;
     setSelectedType(type);
     setInspectedId(null);
+    setPreviewCell(null);
   }
 
-  function placePiece(row: number, col: number) {
+  function activateCell(row: number, col: number) {
     const existing = boardPieces.get(cellKey(row, col));
     if (existing) {
       setInspectedId(existing.id);
+      setPreviewCell(null);
       return;
     }
     if (
@@ -546,6 +557,18 @@ export default function Home() {
       (mode === "ai" && currentPlayer === "red") ||
       inventory[currentPlayer][selectedType] <= 0
     ) {
+      return;
+    }
+
+    const usesTapPreview =
+      window.innerWidth <= 720 ||
+      window.matchMedia("(hover: none), (pointer: coarse)").matches;
+    const isConfirmedPreview =
+      previewCell?.[0] === row && previewCell?.[1] === col;
+
+    if (usesTapPreview && !isConfirmedPreview) {
+      setPreviewCell([row, col]);
+      setInspectedId(null);
       return;
     }
 
@@ -560,6 +583,7 @@ export default function Home() {
     const nextPlayer = currentPlayer === "red" ? "blue" : "red";
     setPieces(nextPieces);
     setInspectedId(placed.id);
+    setPreviewCell(null);
 
     if (nextPieces.length === PIECES_PER_PLAYER * 2) {
       setPhase("ready");
@@ -598,6 +622,7 @@ export default function Home() {
     setSelectedType("scout");
     setPhase("placement");
     setHoverCell(null);
+    setPreviewCell(null);
     setInspectedId(null);
     setPendingIds([]);
     setRound(0);
@@ -607,6 +632,7 @@ export default function Home() {
   }
 
   function reset() {
+    setShowSettings(false);
     const nextFirst = resolveFirstPlayer(firstChoice);
     setFirstPlayer(nextFirst);
     resetTo(nextFirst);
@@ -678,62 +704,12 @@ export default function Home() {
           <span>{subtitle}</span>
         </div>
         <div className="header-actions">
-          <div className="mode-switch" aria-label="对战模式">
-            <button
-              className={mode === "ai" ? "selected" : ""}
-              onClick={() => changeMode("ai")}
-            >
-              对战 AI
-            </button>
-            <button
-              className={mode === "local" ? "selected" : ""}
-              onClick={() => changeMode("local")}
-            >
-              双人
-            </button>
-          </div>
-          <div className="mode-switch first-switch" aria-label="选择先手">
-            <button
-              className={firstChoice === "blue" ? "selected" : ""}
-              onClick={() => changeFirstPlayer("blue")}
-            >
-              {mode === "ai" ? "我先手" : "青方先"}
-            </button>
-            <button
-              className={firstChoice === "red" ? "selected" : ""}
-              onClick={() => changeFirstPlayer("red")}
-            >
-              {mode === "ai" ? "AI 先手" : "赤方先"}
-            </button>
-            <button
-              className={firstChoice === "random" ? "selected" : ""}
-              onClick={() => changeFirstPlayer("random")}
-            >
-              随机
-            </button>
-          </div>
-          {mode === "ai" && (
-            <label className="ai-style-select">
-              <span>
-                AI 风格
-                {aiStyle === "random" &&
-                  ` · 本局${STRATEGY_LABELS[activeAiStyle]}`}
-              </span>
-              <select
-                value={aiStyle}
-                onChange={(event) =>
-                  changeAiStyle(event.target.value as AiStyle)
-                }
-                aria-label="选择 AI 风格"
-              >
-                <option value="balanced">均衡</option>
-                <option value="aggressive">猛攻</option>
-                <option value="defensive">结阵</option>
-                <option value="territorial">控场</option>
-                <option value="random">随机</option>
-              </select>
-            </label>
-          )}
+          <button
+            className="quiet-button settings-button"
+            onClick={() => setShowSettings(true)}
+          >
+            设置
+          </button>
           <button className="quiet-button" onClick={reset}>
             重新开始
           </button>
@@ -763,6 +739,15 @@ export default function Home() {
         </aside>
 
         <div className="board-column">
+          <div className={`mobile-opponent-summary ${opponentPlayer}`}>
+            <strong>{PLAYER_NAMES[opponentPlayer]}剩余</strong>
+            {PIECE_TYPES.map((type) => (
+              <span key={type}>
+                <i>{PIECES[type].mark}</i>
+                {inventory[opponentPlayer][type]}
+              </span>
+            ))}
+          </div>
           <div className={`board-frame ${phase === "settling" ? "is-settling" : ""}`}>
             <div className="board" role="grid" aria-label="七乘七阵衡棋盘">
               {Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
@@ -796,6 +781,9 @@ export default function Home() {
                       "cell",
                       highlighted.has(cellKey(row, col)) ? "in-range" : "",
                       zoneClass,
+                      previewCell?.[0] === row && previewCell?.[1] === col
+                        ? "preview-origin"
+                        : "",
                       piece ? "occupied" : "",
                       isInspected ? "inspected" : "",
                     ]
@@ -811,7 +799,7 @@ export default function Home() {
                     onMouseEnter={() => setHoverCell([row, col])}
                     onMouseLeave={() => setHoverCell(null)}
                     onFocus={() => setHoverCell([row, col])}
-                    onClick={() => placePiece(row, col)}
+                    onClick={() => activateCell(row, col)}
                   >
                     {zoneSymbol && (
                       <span className="zone-symbol" aria-hidden="true">
@@ -872,37 +860,9 @@ export default function Home() {
               <span><i className="legend-square balanced">=</i>势均力敌</span>
             </div>
           </div>
-          <div className="palette-picker" aria-label="势力配色">
-            <span>势力配色</span>
-            {([
-              ["standard", "标准"],
-              ["vivid", "鲜亮"],
-              ["accessible", "辨色辅助"],
-            ] as const).map(([theme, label]) => (
-              <button
-                key={theme}
-                className={colorTheme === theme ? "selected" : ""}
-                onClick={() => setColorTheme(theme)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="palette-picker piece-display-picker" aria-label="棋子显示">
-            <span>棋子显示</span>
-            <button
-              className={pieceDisplay === "mark" ? "selected" : ""}
-              onClick={() => setPieceDisplay("mark")}
-            >
-              文字
-            </button>
-            <button
-              className={pieceDisplay === "range" ? "selected" : ""}
-              onClick={() => setPieceDisplay("range")}
-            >
-              范围图
-            </button>
-          </div>
+          <p className="tap-hint">
+            轻点空格预览范围，再点同一格确认放置
+          </p>
         </div>
 
         <aside className={`player-panel blue-panel ${currentPlayer === "blue" && phase === "placement" ? "active" : ""}`}>
@@ -979,6 +939,140 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      {showSettings && (
+        <div className="settings-overlay" role="presentation">
+          <section
+            className="settings-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="settings-title"
+          >
+            <div className="settings-heading">
+              <div>
+                <p>对局偏好</p>
+                <h2 id="settings-title">设置</h2>
+              </div>
+              <button
+                className="settings-close"
+                onClick={() => setShowSettings(false)}
+                aria-label="关闭设置"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="setting-row">
+              <span>对战模式</span>
+              <div className="mode-switch">
+                <button
+                  className={mode === "ai" ? "selected" : ""}
+                  onClick={() => changeMode("ai")}
+                >
+                  对战 AI
+                </button>
+                <button
+                  className={mode === "local" ? "selected" : ""}
+                  onClick={() => changeMode("local")}
+                >
+                  双人
+                </button>
+              </div>
+            </div>
+
+            <div className="setting-row">
+              <span>先手</span>
+              <div className="mode-switch first-switch">
+                <button
+                  className={firstChoice === "blue" ? "selected" : ""}
+                  onClick={() => changeFirstPlayer("blue")}
+                >
+                  {mode === "ai" ? "我" : "青方"}
+                </button>
+                <button
+                  className={firstChoice === "red" ? "selected" : ""}
+                  onClick={() => changeFirstPlayer("red")}
+                >
+                  {mode === "ai" ? "AI" : "赤方"}
+                </button>
+                <button
+                  className={firstChoice === "random" ? "selected" : ""}
+                  onClick={() => changeFirstPlayer("random")}
+                >
+                  随机
+                </button>
+              </div>
+            </div>
+
+            {mode === "ai" && (
+              <div className="setting-row">
+                <span>
+                  AI 风格
+                  {aiStyle === "random" &&
+                    `（本局${STRATEGY_LABELS[activeAiStyle]}）`}
+                </span>
+                <select
+                  className="settings-select"
+                  value={aiStyle}
+                  onChange={(event) =>
+                    changeAiStyle(event.target.value as AiStyle)
+                  }
+                >
+                  <option value="balanced">均衡</option>
+                  <option value="aggressive">猛攻</option>
+                  <option value="defensive">结阵</option>
+                  <option value="territorial">控场</option>
+                  <option value="random">随机</option>
+                </select>
+              </div>
+            )}
+
+            <div className="setting-row">
+              <span>势力配色</span>
+              <div className="setting-options">
+                {([
+                  ["standard", "标准"],
+                  ["vivid", "鲜亮"],
+                  ["accessible", "辨色辅助"],
+                ] as const).map(([theme, label]) => (
+                  <button
+                    key={theme}
+                    className={colorTheme === theme ? "selected" : ""}
+                    onClick={() => setColorTheme(theme)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="setting-row">
+              <span>棋子显示</span>
+              <div className="setting-options">
+                <button
+                  className={pieceDisplay === "mark" ? "selected" : ""}
+                  onClick={() => setPieceDisplay("mark")}
+                >
+                  文字
+                </button>
+                <button
+                  className={pieceDisplay === "range" ? "selected" : ""}
+                  onClick={() => setPieceDisplay("range")}
+                >
+                  范围图
+                </button>
+              </div>
+            </div>
+
+            <button
+              className="primary-button settings-done"
+              onClick={() => setShowSettings(false)}
+            >
+              完成
+            </button>
+          </section>
+        </div>
+      )}
 
       {phase === "finished" && showResult && (
         <div className="result-overlay" role="presentation">
