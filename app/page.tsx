@@ -1097,7 +1097,7 @@ export default function Home() {
     <main className={`game-shell theme-${colorTheme} mode-${mode} lang-${lang}`}>
       <header className="topbar">
         <div className="brand">
-          <span className="brand-mark">{lang === "zh" ? "衡" : "EQ"}</span>
+          <span className="brand-mark">衡</span>
           <div>
             <p>{t.subtitle}</p>
             <h1>{t.title}</h1>
