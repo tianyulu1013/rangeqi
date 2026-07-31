@@ -730,7 +730,7 @@ export default function Home() {
                 <option value="aggressive">猛攻</option>
                 <option value="defensive">结阵</option>
                 <option value="territorial">控场</option>
-                <option value="random">随机（每局抽一种）</option>
+                <option value="random">随机</option>
               </select>
             </label>
           )}
