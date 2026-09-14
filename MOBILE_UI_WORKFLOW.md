@@ -7,7 +7,7 @@
 ```text
 起始界面
 ├─ Classic 界面
-└─ Skirmish 界面
+└─ Arena 界面
 ```
 
 本流程只改变信息架构、页面布局、导航和移动端交互，不新增棋子、不调整棋子强度、不重做 AI 策略，也不改变 Classic 与 Collapse 的规则。
@@ -21,7 +21,7 @@
 开始前记录并确认以下功能正常：
 
 - Classic 为固定 7×7 棋盘和固定双方阵容。
-- Skirmish 已有确定性种子、Fence、Draft 和动态阵容骨架。
+- Arena 已有确定性种子、Fence、Draft 和动态阵容骨架。
 - 手牌默认不选择棋子。
 - 选择手牌后，点击合法棋盘格立即落子。
 - 点击棋盘棋子可以查看“谁影响它 / 它影响谁”。
@@ -41,10 +41,10 @@
 ### 3.1 顶层界面
 
 ```ts
-type AppScreen = "home" | "classic" | "skirmish";
+type AppScreen = "home" | "classic" | "arena";
 ```
 
-不要继续使用游戏顶部的 Classic / Skirmish 即时切换器。模式切换只能通过起始界面完成。
+不要继续使用游戏顶部的 Classic / Arena 即时切换器。模式切换只能通过起始界面完成。
 
 ### 3.2 共享对局阶段
 
@@ -56,10 +56,10 @@ type BattlePhase =
   | "finished";
 ```
 
-### 3.3 Skirmish 内部阶段
+### 3.3 Arena 内部阶段
 
 ```ts
-type SkirmishStage =
+type ArenaStage =
   | "battlefield"
   | "core-draft"
   | "advanced-draft"
@@ -74,7 +74,7 @@ UI 流程阶段可以先准备 `core-draft` 和 `advanced-draft` 两个界面状
 HomeScreen
 ├─ ClassicScreen
 │  └─ Placement → Ready → Collapse → Result
-└─ SkirmishScreen
+└─ ArenaScreen
    └─ Battlefield → Core Draft → Advanced Draft
       → Placement → Ready → Collapse → Result
 ```
@@ -111,7 +111,7 @@ HomeScreen
 components/game/
 ├─ HomeScreen.tsx
 ├─ ClassicScreen.tsx
-├─ SkirmishScreen.tsx
+├─ ArenaScreen.tsx
 ├─ BattleScreen.tsx
 ├─ BattleBoard.tsx
 ├─ PlayerHand.tsx
@@ -125,7 +125,7 @@ components/game/
 ├─ ResultSheet.tsx
 └─ ConfirmDialog.tsx
 
-components/skirmish/
+components/arena/
 ├─ BattlefieldStage.tsx
 ├─ BattlefieldPreview.tsx
 ├─ DraftStage.tsx
@@ -135,11 +135,11 @@ components/skirmish/
 
 实际文件名可以调整，但必须满足：
 
-- Classic 和 Skirmish 共用同一个棋盘组件。
-- Classic 和 Skirmish 共用同一套手牌、棋子查看、Collapse 和结果组件。
+- Classic 和 Arena 共用同一个棋盘组件。
+- Classic 和 Arena 共用同一套手牌、棋子查看、Collapse 和结果组件。
 - 设置、规则书和战局记录使用共享抽屉组件。
 - 页面组件不重新实现规则计算。
-- Skirmish 可以增加阶段，但不能复制一套 BattleScreen。
+- Arena 可以增加阶段，但不能复制一套 BattleScreen。
 
 ### 验收标准
 
@@ -165,7 +165,7 @@ Battle Array: Collapse
 Same armies. Same battlefield.
 Pure formation strategy.
 
-[ SKIRMISH ]
+[ ARENA ]
 Draft your army for a different battlefield every match.
 
 [ Settings ]    [ Rulebook ]
@@ -179,7 +179,7 @@ Draft your army for a different battlefield every match.
 [ CLASSIC ]
 相同军队，相同战场，纯粹比较布阵。
 
-[ SKIRMISH ]
+[ ARENA ]
 面对每局不同的战场，临场构筑你的军队。
 
 [ 设置 ]    [ 规则书 ]
@@ -187,9 +187,9 @@ Draft your army for a different battlefield every match.
 
 ### 任务
 
-- [ ] 删除正式游戏顶部的 Classic / Skirmish 切换器。
+- [ ] 删除正式游戏顶部的 Classic / Arena 切换器。
 - [ ] 制作两个明显但不过度复杂的模式入口卡片。
-- [ ] Classic 和 Skirmish 卡片在手机上纵向排列。
+- [ ] Classic 和 Arena 卡片在手机上纵向排列。
 - [ ] 桌面上可以并排排列，但顺序始终为 Classic 在前。
 - [ ] 默认聚焦 Classic，但不自动进入任何模式。
 - [ ] 将语言、规则书和设置放在次级位置。
@@ -206,7 +206,7 @@ Draft your army for a different battlefield every match.
 
 ### 验收标准
 
-- 首页只有 Classic 和 Skirmish 两个主要入口。
+- 首页只有 Classic 和 Arena 两个主要入口。
 - 玩家不会把 AI / 本地双人误认为第三种核心规则模式。
 - 手机上的首页无需滚动即可看到两个模式入口。
 
@@ -284,22 +284,22 @@ Classic 在竖屏手机中始终保持棋盘为视觉主体，手牌和操作不
 - 320×568 与 390×844 均能完成整局。
 - 棋盘不被手牌遮挡。
 - 所有主要落子操作单手可完成。
-- Classic 不出现任何 Skirmish 专属信息。
+- Classic 不出现任何 Arena 专属信息。
 
 ---
 
-## 8. 阶段四：制作 Skirmish 独立流程
+## 8. 阶段四：制作 Arena 独立流程
 
 ### 目标
 
-Skirmish 不再作为 Classic 页面中的大型占位区域，而是拥有自己的连续阶段。
+Arena 不再作为 Classic 页面中的大型占位区域，而是拥有自己的连续阶段。
 
 ### 8.1 战场阶段
 
 页面只展示本局出题信息：
 
 ```text
-← Skirmish       Battlefield       ⚙
+← Arena       Battlefield       ⚙
 
 战场预览
 [ 7×7 Fence 地图 ]
@@ -322,7 +322,7 @@ Seed: A72F31                     ⋯
 本阶段先完成通用 UI，候选内容由棋池流程接入。
 
 ```text
-← Skirmish       CORE 3/7          ⚙
+← Arena       CORE 3/7          ⚙
 
 [ 战场缩略图 · 点击查看 ]
 
@@ -374,14 +374,14 @@ ADVANCED 1/3
 - [ ] 玩家点击“开始布阵”后才进入棋盘。
 - [ ] 不要在第十次选择后毫无提示地瞬间跳到棋盘。
 
-### 8.6 Skirmish 布阵
+### 8.6 Arena 布阵
 
 复用 Classic 的 BattleScreen，只增加：
 
 - Fence。
 - 当前种子的简短入口。
 - Draft 产生的动态双方阵容。
-- Skirmish 模式名称。
+- Arena 模式名称。
 
 不得增加第二套棋盘和第二套 Collapse UI。
 
@@ -390,7 +390,7 @@ ADVANCED 1/3
 - 玩家始终知道自己位于战场、基础 Draft、高级 Draft 或布阵中的哪个阶段。
 - 手机 Draft 三张候选无需横向滚动。
 - Draft 页面不会同时挤入完整地图、种子输入框、双方完整阵容和大量说明。
-- Skirmish 布阵与 Classic 的核心操作位置一致。
+- Arena 布阵与 Classic 的核心操作位置一致。
 
 ---
 
@@ -422,7 +422,7 @@ ADVANCED 1/3
 
 - 根据当前模式首先显示相关内容。
 - Classic 不强迫玩家阅读 Fence 与 Draft。
-- Skirmish 显示随机战场、Fence、基础 Draft 和高级 Draft。
+- Arena 显示随机战场、Fence、基础 Draft 和高级 Draft。
 - 仍可切换查看完整通用规则。
 
 ### 棋子查看抽屉
@@ -533,7 +533,7 @@ ADVANCED 1/3
 ### 对局路径
 
 - [ ] 起始页 → Classic → 完整对局 → 结果 → 再来一局。
-- [ ] 起始页 → Skirmish → 战场 → 基础 Draft → 高级 Draft → 完整对局。
+- [ ] 起始页 → Arena → 战场 → 基础 Draft → 高级 Draft → 完整对局。
 - [ ] 对局中打开并关闭设置、规则书、棋子查看和日志。
 - [ ] 有进度时尝试返回首页，确认提示和取消行为。
 - [ ] 中文完整路径。
@@ -542,9 +542,9 @@ ADVANCED 1/3
 
 ### 最终验收标准
 
-- 起始、Classic、Skirmish 是三个清晰界面。
-- Classic 页面不显示 Skirmish 专属内容。
-- Skirmish 的四个内部阶段顺序明确。
+- 起始、Classic、Arena 是三个清晰界面。
+- Classic 页面不显示 Arena 专属内容。
+- Arena 的四个内部阶段顺序明确。
 - 棋盘在竖屏中始终是视觉主体。
 - 设置和辅助信息不再挤占主界面。
 - UI 重构没有改变任何棋子与 Collapse 规则。
@@ -557,7 +557,7 @@ ADVANCED 1/3
 2. `feat: add dedicated home mode selection`
 3. `refactor: extract shared battle components`
 4. `feat: rebuild classic portrait layout`
-5. `feat: add staged skirmish mobile flow`
+5. `feat: add staged arena mobile flow`
 6. `feat: move settings and game info into sheets`
 7. `feat: lock android to portrait orientation`
 8. `fix: handle mobile web landscape and safe areas`
@@ -576,8 +576,7 @@ ADVANCED 1/3
 3. 制作独立起始界面。
 4. 移除游戏顶部的规则模式切换器。
 5. 建立返回起始页与未保存进度确认。
-6. 保持 Classic 与 Skirmish 当前功能不变。
+6. 保持 Classic 与 Arena 当前功能不变。
 7. 运行测试并汇报视觉差异、修改文件和遗留风险。
 
 第一轮验收后，再开始 Classic 竖屏排布；不要第一轮同时改 Draft、Bottom Sheet 和 Android 方向锁定。
-

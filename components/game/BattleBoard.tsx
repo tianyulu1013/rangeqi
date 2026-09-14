@@ -433,7 +433,7 @@ export function BattleBoard({
           );
           const isSelectorEligible = Boolean(
             placementPreview &&
-            (placementPreview.type === "selector" || placementPreview.type === "sentry" || placementPreview.type === "engineer") &&
+            (placementPreview.type === "selector" || placementPreview.type === "sentry" || placementPreview.type === "mason") &&
             selectorEligibleKeys.has(key),
           );
           const isSelectorTarget = selectorTargetKeys.has(key);

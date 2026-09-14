@@ -5,10 +5,10 @@ import {
   GiCrossbow,
   GiHalberd,
   GiHorseHead,
-  GiHammerNails,
   GiGuardedTower,
   GiMusket,
   GiShield,
+  GiStoneCrafting,
   GiTwoHandedSword,
 } from "react-icons/gi";
 import type { IconType } from "react-icons";
@@ -40,7 +40,7 @@ const PIECE_ICONS: Record<
   charger: GiCavalry,
   halberd: GiHalberd,
   sentry: GiGuardedTower,
-  engineer: GiHammerNails,
+  mason: GiStoneCrafting,
 };
 
 export function RangeIcon({
@@ -121,19 +121,19 @@ export function RangeIcon({
       targets.add(key);
     }
   }
-  if (type === "engineer") {
+  if (type === "mason") {
     for (const key of [cellKey(1, 2), cellKey(2, 1), cellKey(2, 3)]) {
       targets.add(key);
     }
   }
 
-  const screens = type === "sentry" || type === "engineer" ? new Set(["2-2"]) : new Set<string>();
+  const screens = type === "sentry" || type === "mason" ? new Set(["2-2"]) : new Set<string>();
   return (
     <span className={`range-icon ${gridSize === 7 ? "range-icon-7" : ""}`} aria-hidden="true">
       {Array.from({ length: gridSize * gridSize }, (_, index) => {
         const row = Math.floor(index / gridSize);
         const col = index % gridSize;
-        const isOrigin = type === "engineer"
+        const isOrigin = type === "mason"
           ? row === 3 && col === 2
           : type !== "sentry" && row === gridCenter && col === gridCenter;
         return (

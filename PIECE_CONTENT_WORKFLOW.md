@@ -6,8 +6,8 @@
 
 开始前必须确认：
 
-- 起始界面、Classic 界面和 Skirmish 界面已经分离。
-- Skirmish 已有独立的战场、基础 Draft、高级 Draft 和布阵阶段。
+- 起始界面、Classic 界面和 Arena 界面已经分离。
+- Arena 已有独立的战场、基础 Draft、高级 Draft 和布阵阶段。
 - Draft 卡片与手牌组件不再写死现有六种棋。
 - 手机竖屏可以容纳三张候选卡和动态阵容。
 - Classic 使用独立固定阵容配置。
@@ -19,7 +19,7 @@
 
 ## 2. 内容目标
 
-Skirmish 中建立两个彼此独立的棋池：
+Arena 中建立两个彼此独立的棋池：
 
 ```text
 基础棋池 Core
@@ -104,7 +104,7 @@ type PieceDefinition = {
   tier: PieceTier;
   tags: PieceTag[];
   classicEnabled: boolean;
-  skirmishEnabled: boolean;
+  arenaEnabled: boolean;
   draftWeight: number;
   maxDraftAppearances: number;
   maxRosterCopies: number;
@@ -135,7 +135,7 @@ const CLASSIC_ROSTER = {
 
 ```ts
 classicEnabled: false
-skirmishEnabled: true
+arenaEnabled: true
 ```
 
 不得继续通过“所有已注册棋子的默认数量总和”计算 Classic 阵容。
@@ -409,7 +409,7 @@ AI 完整升级不在前期范围内，但规则稳定后必须建立可重复�
 - [ ] 新棋不会出现在手牌、规则书主要流程或 AI 库存中。
 - [ ] 所有原有控制范围和 Collapse 测试通过。
 
-### Skirmish
+### Arena
 
 - [ ] 基础池和高级池完全分开。
 - [ ] 每方得到 7 基础、3 高级。
@@ -440,7 +440,7 @@ AI 完整升级不在前期范围内，但规则稳定后必须建立可重复�
 7. `docs: add bilingual piece rules`
 8. `balance: tune draft weights and copy limits`
 9. `feat: teach draft ai the expanded roster`
-10. `test: run full piece and skirmish regression`
+10. `test: run full piece and arena regression`
 
 未经用户明确要求，不得自动提交或推送。
 
@@ -452,7 +452,7 @@ AI 完整升级不在前期范围内，但规则稳定后必须建立可重复�
 - [ ] 高级棋池至少有 5 种，目标为 6 种。
 - [ ] 每枚棋都有完整双语、图标、范围图和精确规则。
 - [ ] Classic 固定阵容不受新棋影响。
-- [ ] Skirmish 先选 7 枚基础棋，再选 3 枚高级棋。
+- [ ] Arena 先选 7 枚基础棋，再选 3 枚高级棋。
 - [ ] 基础和高级不在同一候选轮混合。
 - [ ] 所有棋都兼容 Fence、关系查看、Collapse 和复盘。
 - [ ] 没有明显的永远必选或永远不选棋。

@@ -36,7 +36,7 @@ export function getControlledCells(
       .filter(([row, col]) => withinBoard(row, col) && !isFence(row, col, terrain));
   }
 
-  if (piece.type === "engineer") {
+  if (piece.type === "mason") {
     if (!piece.createdObstacle) return [];
     const { row: obstacleRow, col: obstacleCol } = piece.createdObstacle;
     if (!isFence(obstacleRow, obstacleCol, terrain)) return [];

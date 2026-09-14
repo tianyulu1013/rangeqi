@@ -15,7 +15,7 @@ const PLAYER_FORMATION_TYPES: readonly PieceType[] = [
   "guard", "scout", "archer", "knight", "lancer", "cannon",
   "musket", "shield", "crossbow", "halberd", "fortress",
   "ram", "sentry", "selector", "charger",
-  "engineer",
+  "mason",
 ];
 
 const PIECE_TIER_COST: Record<PieceType, number> = {
@@ -31,7 +31,7 @@ const PIECE_TIER_COST: Record<PieceType, number> = {
   halberd: 2,
   ram: 2,
   sentry: 2,
-  engineer: 2,
+  mason: 2,
   charger: 3,
   selector: 3,
   fortress: 3,
@@ -265,7 +265,7 @@ function placementVariants(
   pieces: Piece[],
   terrain: TerrainCell[],
 ): GeneratedPlacement[] {
-  if (type === "engineer") {
+  if (type === "mason") {
     return [[-1, 0], [1, 0], [0, -1], [0, 1]].flatMap(([dr, dc]) => {
       const targetRow = row + dr;
       const targetCol = col + dc;
@@ -568,7 +568,7 @@ function solutionMeetsSpecialConstraints(solution: GeneratedPlacement[]) {
   if (solution.filter((placement) => placement.type === "selector").length > 1) return false;
   const rams = solution.filter((placement) => placement.type === "ram");
   if (rams.some((placement) => !placement.destroyedObstacle)) return false;
-  if (solution.some((placement) => placement.type === "engineer" && !placement.createdObstacle)) return false;
+  if (solution.some((placement) => placement.type === "mason" && !placement.createdObstacle)) return false;
   return true;
 }
 
@@ -902,7 +902,7 @@ export function validateCustomSolution(options: {
     if (activeTerrain.some((cell) => cell.row === placement.row && cell.col === placement.col)) {
       return { passed: false, collapseRounds: 0, friendlySurvivors: fixedFriendlies.length, enemySurvivors: initialPieces.filter((piece) => piece.player === enemy).length, redundantPieces: 0, puzzle: null };
     }
-    if (placement.type === "engineer") {
+    if (placement.type === "mason") {
       const obstacle = placement.createdObstacle;
       const occupiedByAnyPiece = obstacle && [...initialPieces, ...options.placements].some((piece) =>
         piece.row === obstacle.row && piece.col === obstacle.col);

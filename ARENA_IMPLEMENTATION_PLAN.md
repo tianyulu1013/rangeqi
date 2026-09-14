@@ -1,12 +1,12 @@
-# Battle Array: Collapse — Skirmish 模式执行计划
+# Battle Array: Collapse — Arena 模式执行计划
 
 ## 1. 文档用途
 
-本文档用于指导实现《Battle Array: Collapse》的第二个核心规则模式 `Skirmish`。
+本文档用于指导实现《Battle Array: Collapse》的第二个核心规则模式 `Arena`。
 
 执行者应严格按阶段完成和验证，不要同时开展多个阶段。每完成一个阶段，先运行该阶段要求的检查并确认 Classic 没有回归，再进入下一阶段。
 
-本计划的首个目标是完成一个可以稳定游玩的 Skirmish MVP，而不是一次加入大量新棋子。
+本计划的首个目标是完成一个可以稳定游玩的 Arena MVP，而不是一次加入大量新棋子。
 
 ---
 
@@ -27,12 +27,12 @@ Classic 就是当前《阵衡》的完整玩法，规则不得改变：
 - 20 枚棋全部落完后统一进行 Collapse。
 - Collapse 的攻击、支援、生存值、移除顺序和胜负规则全部保持不变。
 
-### 2.2 Skirmish
+### 2.2 Arena
 
-Skirmish 使用同一套落子与 Collapse 核心规则，但开局流程不同：
+Arena 使用同一套落子与 Collapse 核心规则，但开局流程不同：
 
 ```text
-选择 Skirmish
+选择 Arena
     ↓
 根据种子生成随机战场
     ↓
@@ -45,13 +45,13 @@ Skirmish 使用同一套落子与 Collapse 核心规则，但开局流程不同�
 执行原有 Collapse
 ```
 
-Skirmish 的随机性只发生在战场与 Draft 候选生成阶段。一旦正式进入布阵，游戏中不得出现随机命中、随机伤害、随机清算或其他不可预测结果。
+Arena 的随机性只发生在战场与 Draft 候选生成阶段。一旦正式进入布阵，游戏中不得出现随机命中、随机伤害、随机清算或其他不可预测结果。
 
 ---
 
 ## 3. MVP 范围
 
-第一版 Skirmish 必须包含：
+第一版 Arena 必须包含：
 
 - 7×7 固定外框棋盘。
 - 每局随机生成 3～6 个 Fence。
@@ -100,7 +100,7 @@ Skirmish 的随机性只发生在战场与 Draft 候选生成阶段。一旦正�
 
 - 当前状态被完整记录。
 - 没有覆盖或丢失已有工作。
-- 开始 Skirmish 开发前，现有构建与测试全部通过。
+- 开始 Arena 开发前，现有构建与测试全部通过。
 
 ---
 
@@ -108,7 +108,7 @@ Skirmish 的随机性只发生在战场与 Draft 候选生成阶段。一旦正�
 
 ### 目标
 
-把规则计算从 `app/page.tsx` 中拆出，使 Classic 和 Skirmish 共用同一套规则函数。这个阶段只重构，不改变任何玩家可见行为。
+把规则计算从 `app/page.tsx` 中拆出，使 Classic 和 Arena 共用同一套规则函数。这个阶段只重构，不改变任何玩家可见行为。
 
 ### 建议目录
 
@@ -121,7 +121,7 @@ lib/game/
 ├─ collapse.ts       # 生存值、逐轮移除、胜负统计
 ├─ random.ts         # 带种子的确定性随机数
 ├─ classic.ts        # Classic 配置
-└─ skirmish.ts       # Skirmish 配置、地图和 Draft 逻辑
+└─ arena.ts       # Arena 配置、地图和 Draft 逻辑
 ```
 
 可以根据现有项目结构调整文件名，但必须维持以下边界：
@@ -130,7 +130,7 @@ lib/game/
 - React 组件不得负责执行 Collapse 算法。
 - 地图生成器不得直接修改 React 状态。
 - AI 与玩家必须调用相同的合法落子和规则函数。
-- Classic 与 Skirmish 不得各复制一套攻击或 Collapse 逻辑。
+- Classic 与 Arena 不得各复制一套攻击或 Collapse 逻辑。
 
 ### 必须抽出的纯函数
 
@@ -179,18 +179,18 @@ lib/game/
 ### 数据结构
 
 ```ts
-type Ruleset = "classic" | "skirmish";
+type Ruleset = "classic" | "arena";
 type OpponentMode = "ai" | "local";
 ```
 
-如果当前 `mode` 表示 AI 或本地双人，应将其明确重命名为 `opponentMode`。不要使用同一个变量同时表示 Classic/Skirmish 和 AI/本地双人。
+如果当前 `mode` 表示 AI 或本地双人，应将其明确重命名为 `opponentMode`。不要使用同一个变量同时表示 Classic/Arena 和 AI/本地双人。
 
 ### 开局界面
 
 只显示两个主要规则模式入口：
 
 - `Classic`
-- `Skirmish`
+- `Arena`
 
 中英文说明：
 
@@ -199,7 +199,7 @@ Classic
 Same armies. Same battlefield. Pure formation strategy.
 相同军队，相同战场，纯粹比较布阵。
 
-Skirmish
+Arena
 Draft your army for a different battlefield every match.
 面对每局不同的战场，临场构筑你的军队。
 ```
@@ -226,7 +226,7 @@ Classic 流程：
 mode-select → placement → ready → settling → finished
 ```
 
-Skirmish 流程：
+Arena 流程：
 
 ```text
 mode-select → draft → placement → ready → settling → finished
@@ -234,10 +234,10 @@ mode-select → draft → placement → ready → settling → finished
 
 ### 验收标准
 
-- Classic 和 Skirmish 只有两个主要入口。
+- Classic 和 Arena 只有两个主要入口。
 - AI / 本地双人没有与规则模式混为一谈。
 - 选择 Classic 后直接进入现有布阵。
-- 选择 Skirmish 后进入地图与 Draft 流程。
+- 选择 Arena 后进入地图与 Draft 流程。
 - 重新开始时返回当前模式的新对局；另提供返回模式选择的入口。
 
 ---
@@ -263,13 +263,13 @@ type SeededRandom = {
 
 ### 规则
 
-- [ ] 新建 Skirmish 对局时生成一个短且可复制的种子。
+- [ ] 新建 Arena 对局时生成一个短且可复制的种子。
 - [ ] 地图与 Draft 使用同一个根种子派生不同随机序列，避免修改地图算法后无意改变全部 Draft。
 - [ ] 建议派生名称：`<seed>:battlefield` 与 `<seed>:draft`。
 - [ ] 页面显示当前种子。
 - [ ] 提供复制种子的按钮。
 - [ ] 提供输入种子重新开始的入口。
-- [ ] 不使用 `Math.random()` 直接决定 Skirmish 地图或候选。
+- [ ] 不使用 `Math.random()` 直接决定 Arena 地图或候选。
 
 ### 测试要求
 
@@ -285,7 +285,7 @@ type SeededRandom = {
 
 ---
 
-## 8. 阶段四：生成 Skirmish 战场
+## 8. 阶段四：生成 Arena 战场
 
 ### 目标
 
@@ -358,7 +358,7 @@ Classic 使用同一 `BoardDefinition`，但 `terrain` 永远为空数组。
 ### 验收标准
 
 - Classic 棋盘完全没有 Fence。
-- Skirmish 每局能稳定生成合法且可复现的战场。
+- Arena 每局能稳定生成合法且可复现的战场。
 - Fence 规则在界面、AI 和 Collapse 中一致。
 
 ---
@@ -485,7 +485,7 @@ fortress
 
 - [ ] 将库存初始化改为读取当前对局的 `redRoster` 与 `blueRoster`。
 - [ ] Classic 仍从固定阵容配置生成双方库存。
-- [ ] Skirmish 从 Draft 结果生成双方库存。
+- [ ] Arena 从 Draft 结果生成双方库存。
 - [ ] 手牌中数量为 0 的棋种可以隐藏，或保留禁用状态；移动端优先隐藏以节省空间。
 - [ ] 手牌默认不选择任何棋子。
 - [ ] 选择一枚手牌后，点击合法空格立即落子。
@@ -499,12 +499,12 @@ fortress
 ### 验收标准
 
 - Classic 固定阵容完全不变。
-- Skirmish 可以正确处理重复较多或完全不同的双方阵容。
+- Arena 可以正确处理重复较多或完全不同的双方阵容。
 - 不存在库存为负数、放置不存在棋种或提前开始 Collapse 的情况。
 
 ---
 
-## 11. 阶段七：Skirmish AI
+## 11. 阶段七：Arena AI
 
 ### 目标
 
@@ -531,7 +531,7 @@ AI 不需要第一版就达到最优，但必须：
 
 ### 模拟测试
 
-- [ ] 批量运行至少 500 局 Skirmish AI 自对弈。
+- [ ] 批量运行至少 500 局 Arena AI 自对弈。
 - [ ] 不得出现崩溃、死循环、非法落子或库存错误。
 - [ ] 记录红方胜率、蓝方胜率和平局率。
 - [ ] 若先手胜率明显超过 60%，先记录并分析地图与 Draft 的影响，不要直接修改 Collapse 规则。
@@ -552,7 +552,7 @@ AI 不需要第一版就达到最优，但必须：
 
 ### 必须补充的双语内容
 
-- Classic / Skirmish 的模式说明。
+- Classic / Arena 的模式说明。
 - Battlefield / 战场。
 - Fence / 栅栏。
 - Draft / 征募。
@@ -576,8 +576,8 @@ AI 不需要第一版就达到最优，但必须：
 - 图标继续作为默认棋子显示方式。
 - 英文标题保持 `Battle Array: Collapse`。
 - 中文模式标题保持 `阵衡`，除非用户另行决定。
-- Classic 页面不得因为 Skirmish 增加大量永久按钮。
-- 只有 Skirmish 才显示地图种子与 Draft 信息。
+- Classic 页面不得因为 Arena 增加大量永久按钮。
+- 只有 Arena 才显示地图种子与 Draft 信息。
 - 手机端 Draft 三张候选卡必须无需横向滚动即可阅读。
 - Draft 时可以查看战场，但不能提前落子。
 - 棋子关系视角继续支持“谁影响它 / 它影响谁”。
@@ -595,7 +595,7 @@ AI 不需要第一版就达到最优，但必须：
 
 ### 目标
 
-Classic 玩家只需学习原有六种棋；Skirmish 玩家在需要时再学习 Draft 与地形。
+Classic 玩家只需学习原有六种棋；Arena 玩家在需要时再学习 Draft 与地形。
 
 ### 规则书结构
 
@@ -609,7 +609,7 @@ Classic
 ├─ 固定棋盘
 └─ 固定阵容
 
-Skirmish
+Arena
 ├─ 随机战场
 ├─ Fence
 ├─ 十轮 Draft
@@ -618,8 +618,8 @@ Skirmish
 
 ### 教学要求
 
-- Classic 教学不得强迫玩家阅读 Skirmish 内容。
-- Skirmish 首次进入时只解释三个新概念：随机战场、Fence、三选一 Draft。
+- Classic 教学不得强迫玩家阅读 Arena 内容。
+- Arena 首次进入时只解释三个新概念：随机战场、Fence、三选一 Draft。
 - 不重复讲解已经在 Classic 中掌握的 Collapse。
 - Draft 候选卡自身承担棋种说明职责。
 - 首次提示应可关闭，并避免每次刷新重复强制出现。
@@ -641,9 +641,9 @@ Skirmish
 | Classic | AI | English | Desktop | 完整布阵、关系查看、Collapse、复盘 |
 | Classic | AI | 中文 | Mobile | 手牌选择、单击落子、结果弹窗 |
 | Classic | Local | English | Desktop | 双方轮流、撤回、结算 |
-| Skirmish | AI | English | Desktop | 地图、Draft、动态库存、完整对局 |
-| Skirmish | AI | 中文 | Mobile | Draft 卡片、Fence、单击落子、Collapse |
-| Skirmish | Local | English | Mobile | 遮挡选择、交接、公开结果、完整对局 |
+| Arena | AI | English | Desktop | 地图、Draft、动态库存、完整对局 |
+| Arena | AI | 中文 | Mobile | Draft 卡片、Fence、单击落子、Collapse |
+| Arena | Local | English | Mobile | 遮挡选择、交接、公开结果、完整对局 |
 
 ### 自动检查
 
@@ -659,7 +659,7 @@ Skirmish
 
 - [ ] Classic 不出现 Fence 或 Draft。
 - [ ] Classic 固定阵容数量完全一致。
-- [ ] Skirmish 相同种子可复现。
+- [ ] Arena 相同种子可复现。
 - [ ] Fence 不可落子。
 - [ ] Fence 对六种基础棋的影响符合规则。
 - [ ] AI 不会在玩家选择后临时改变本轮 Draft 选择。
@@ -674,19 +674,19 @@ Skirmish
 
 ## 15. 建议提交顺序
 
-不要把整个 Skirmish 做成一次巨大提交。建议按以下边界拆分：
+不要把整个 Arena 做成一次巨大提交。建议按以下边界拆分：
 
 1. `refactor: extract shared game rules`
 2. `test: cover piece relations and collapse`
-3. `feat: add classic and skirmish rulesets`
+3. `feat: add classic and arena rulesets`
 4. `feat: add deterministic match seeds`
-5. `feat: generate fenced skirmish battlefields`
+5. `feat: generate fenced arena battlefields`
 6. `test: validate battlefield generation`
 7. `feat: add ten-round shared-offer draft`
 8. `feat: support dynamic drafted rosters`
-9. `feat: add skirmish draft AI`
+9. `feat: add arena draft AI`
 10. `feat: add local pass-and-play draft privacy`
-11. `docs: add skirmish rules and bilingual copy`
+11. `docs: add arena rules and bilingual copy`
 12. `build: sync static and android outputs`
 
 如果当前工作区尚未整理完成，执行者不得擅自提交或推送。每次提交前先向用户确认当前提交范围，避免把之前未完成的功能混进错误的提交中。
@@ -695,11 +695,11 @@ Skirmish
 
 ## 16. 完成定义
 
-Skirmish MVP 只有同时满足以下条件才算完成：
+Arena MVP 只有同时满足以下条件才算完成：
 
-- [ ] 游戏首页只有 Classic 和 Skirmish 两个核心规则入口。
+- [ ] 游戏首页只有 Classic 和 Arena 两个核心规则入口。
 - [ ] Classic 的规则和体验没有改变。
-- [ ] Skirmish 地图可由种子稳定复现。
+- [ ] Arena 地图可由种子稳定复现。
 - [ ] 每局有 3～6 个合法 Fence。
 - [ ] 双方完成十轮相同候选的三选一 Draft。
 - [ ] 双方可以选择同一个棋种。
@@ -717,13 +717,13 @@ Skirmish MVP 只有同时满足以下条件才算完成：
 
 ## 17. Luna 的第一轮执行范围
 
-第一轮只执行以下内容，不要立即实现完整 Skirmish：
+第一轮只执行以下内容，不要立即实现完整 Arena：
 
 1. 检查并保护当前未提交改动。
 2. 将现有规则计算拆分为纯函数模块。
 3. 为六种棋、攻击支援、关系方向和 Collapse 建立单元测试。
 4. 将当前 AI/本地双人的 `mode` 概念与未来的 `Ruleset` 概念分开。
-5. 增加 Classic/Skirmish 两个入口，但 Skirmish 暂时显示“开发中”或进入空的 Draft 骨架。
+5. 增加 Classic/Arena 两个入口，但 Arena 暂时显示“开发中”或进入空的 Draft 骨架。
 6. 确认 Classic 的玩家可见行为完全不变。
 7. 运行所有检查并汇报：修改文件、测试结果、遗留风险和下一阶段建议。
 

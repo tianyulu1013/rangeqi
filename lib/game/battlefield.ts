@@ -71,7 +71,7 @@ function isValidBattlefield(fences: TerrainCell[]) {
   );
 }
 
-export function generateSkirmishBattlefield(seed: string): BoardDefinition {
+export function generateArenaBattlefield(seed: string): BoardDefinition {
   const random = createSeededRandom(deriveSeed(seed, "battlefield"));
   const fenceCount = random.integer(3, 6);
 

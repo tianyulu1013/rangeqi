@@ -5,7 +5,7 @@
 Battle Array: Collapse is built around three official modes and one player-creation ecosystem:
 
 - **Classic** — fixed board, fixed symmetric armies, deterministic competitive play.
-- **Skirmish** — generated battlefield, tiered Draft, asymmetric armies, deterministic resolution.
+- **Arena** — generated battlefield, tiered Draft, asymmetric armies, deterministic resolution.
 - **Puzzles** — named fixed challenges plus an individualized random challenge generator.
 - **Workshop** — custom pieces, custom puzzles, saved Replays, and portable Share Codes.
 
@@ -24,25 +24,25 @@ Official content must meet a high quality bar. Workshop content only needs to be
 
 - Stabilize all existing piece rules and Collapse ordering.
 - Finish directional presentation using upright icons and a separate facing indicator.
-- Make Rulebook content change with Classic, Skirmish, Puzzles, and Workshop context.
+- Make Rulebook content change with Classic, Arena, Puzzles, and Workshop context.
 - Resolve remaining UI consistency issues, including the Settings icon alignment.
 - Keep the Piece Lab and web generator available as development tools.
 
-**Done when:** Classic and current Skirmish pieces behave consistently in play, preview, inspection, Replay, puzzle validation, and exported data.
+**Done when:** Classic and current Arena pieces behave consistently in play, preview, inspection, Replay, puzzle validation, and exported data.
 
-## Phase 2 — Engineer and dynamic Obstacles
+## Phase 2 — Mason and dynamic Obstacles
 
-Add **Engineer** as the first board-construction piece.
+Add **Mason** as the first board-construction piece.
 
 - After placement, choose an orthogonally adjacent empty tile.
 - Place a neutral **Obstacle** on that tile immediately.
-- The Engineer controls the three other orthogonal tiles around its constructed Obstacle. Its own tile is excluded, and destroying that Obstacle removes this range.
+- The Mason controls the three other orthogonal tiles around its constructed Obstacle. Its own tile is excluded, and destroying that Obstacle removes this range.
 - The new Obstacle can become a Cannon screen, block a Crossbow or Musket ray, stop a Lancer charge, provide a Sentry strongpoint, or be destroyed by a Battering Ram.
-- An Engineer placement is illegal when it has no legal adjacent construction tile.
+- An Mason placement is illegal when it has no legal adjacent construction tile.
 - Start in the Advanced tier and initially limit it to one copy per army while balance is evaluated.
-- Define and test placement-order interactions, especially Engineer versus Battering Ram.
+- Define and test placement-order interactions, especially Mason versus Battering Ram.
 
-**Done when:** Engineer works in placement, previews, inspection, Collapse, Replay, Skirmish Draft, Puzzle Editor, solver evaluation, and serialization.
+**Done when:** Mason works in placement, previews, inspection, Collapse, Replay, Arena Draft, Puzzle Editor, solver evaluation, and serialization.
 
 ## Phase 3 — Theme-aware puzzle generation
 
@@ -58,7 +58,7 @@ Initial theme families:
 - **Lines of Fire** — Cannon screens, Crossbow first targets, and Musket lanes.
 - **Breach** — Obstacles and meaningful Battering Ram destruction.
 - **Charge** — Lancer movement, blockers, and renewed advances after pieces disappear.
-- **Fieldworks** — Engineer construction and Sentry strongpoints.
+- **Fieldworks** — Mason construction and Sentry strongpoints.
 - **Rescue** — fixed allied pieces, relief forces, protection, and encirclement.
 
 Sharpshooter and facing are tools used inside other themes, not standalone theme families.
@@ -152,14 +152,14 @@ Custom pieces cannot contain scripts or arbitrary code. Hard limits apply to boa
 
 **Done when:** a custom piece can be created, previewed, validated structurally, saved locally, exported, imported, and simulated by the normal rules engine.
 
-## Phase 8 — Custom pieces in Skirmish
+## Phase 8 — Custom pieces in Arena
 
-Custom pieces become optional members of the Skirmish Draft pools.
+Custom pieces become optional members of the Arena Draft pools.
 
 - The creator-assigned tier determines which Draft rounds may offer the piece.
 - Both player and AI see candidates from the same pool.
-- A custom Skirmish setup records the exact custom-piece definitions it uses.
-- Official Skirmish remains available with only the official roster.
+- A custom Arena setup records the exact custom-piece definitions it uses.
+- Official Arena remains available with only the official roster.
 
 AI must move away from hard-coded piece-name logic and evaluate abilities through the shared rules engine:
 
@@ -189,7 +189,7 @@ Create compact, versioned Share Codes for:
 - Puzzles;
 - Replays;
 - Custom Pieces;
-- Custom Skirmish setups.
+- Custom Arena setups.
 
 Share Codes must contain a data type, schema version, rules version, compressed payload, and checksum. Import validates bounds, counts, coordinates, rule modules, and retired types before loading. Imported content never changes official campaign progress.
 
@@ -209,11 +209,11 @@ Share Codes must contain a data type, schema version, rules version, compressed 
 The game is complete when it supports:
 
 1. a rigorous symmetric abstract game in Classic;
-2. replayable asymmetric construction in Skirmish;
+2. replayable asymmetric construction in Arena;
 3. a named 50-puzzle official campaign;
 4. individualized Random Challenges;
 5. saved and shareable Replays;
-6. safe custom pieces usable by both players and AI in Skirmish;
+6. safe custom pieces usable by both players and AI in Arena;
 7. player-designed, importable puzzles and custom setups.
 
 At that point, official design supplies the trusted core while Workshop content gives players an open-ended sandbox.

@@ -4,10 +4,10 @@
 
 ### 1. Rulebook 随当前模式变化
 
-- 当前问题：现在的 Rulebook 只介绍 Classic，进入 Skirmish 或 Puzzles 后仍然显示 Classic 内容。
+- 当前问题：现在的 Rulebook 只介绍 Classic，进入 Arena 或 Puzzles 后仍然显示 Classic 内容。
 - 预期行为：Rulebook 保留通用规则，再根据当前模式显示对应章节。
   - Classic：固定棋盘、固定对称阵容、轮流布阵与 Collapse。
-  - Skirmish：随机战场、Obstacle、分级 Draft、非对称阵容以及新增棋子。
+  - Arena：随机战场、Obstacle、分级 Draft、非对称阵容以及新增棋子。
   - Puzzles：预设局面、放完手中全部棋子、Collapse 后消灭全部敌军的胜利条件。
 - 验收标准：从任一模式打开 Rulebook，首先看到该模式真正需要的内容；不会把 Classic 的阵容和胜利条件误套到其他模式。
 

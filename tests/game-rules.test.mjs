@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { BOARD_SIZE, cellKey, isFence, isLegalPlacement, withinBoard } from "../lib/game/board.ts";
-import { generateSkirmishBattlefield } from "../lib/game/battlefield.ts";
+import { generateArenaBattlefield } from "../lib/game/battlefield.ts";
 import {
   DRAFT_POOLS,
   DRAFT_TIER_SCHEDULE,
@@ -180,11 +180,11 @@ test("seeded random stays reproducible and scoped streams stay independent", () 
   assert.equal(deriveSeed("TEST-SEED", "draft"), "TEST-SEED:draft");
 });
 
-test("Skirmish battlefields are deterministic and leave enough open space", () => {
+test("Arena battlefields are deterministic and leave enough open space", () => {
   for (let index = 0; index < 1000; index += 1) {
     const seed = `SEED-${index}`;
-    const first = generateSkirmishBattlefield(seed);
-    const second = generateSkirmishBattlefield(seed);
+    const first = generateArenaBattlefield(seed);
+    const second = generateArenaBattlefield(seed);
     assert.deepEqual(first, second);
     assert.ok(first.terrain.length >= 3 && first.terrain.length <= 6);
     assert.equal(new Set(first.terrain.map((cell) => cellKey(cell.row, cell.col))).size, first.terrain.length);

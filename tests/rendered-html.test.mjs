@@ -32,7 +32,7 @@ test("server-renders the independent mode selection screen", async () => {
   assert.match(html, /<title>Battle Array: Collapse<\/title>/);
   assert.match(html, /class="home-screen"/);
   assert.match(html, />Classic<\/strong>/);
-  assert.match(html, />Skirmish<\/strong>/);
+  assert.match(html, />Arena<\/strong>/);
   assert.match(html, />English<\/option>/);
   assert.match(html, />简体中文<\/option>/);
   assert.doesNotMatch(html, /aria-label="7x7 Battle Array Board"/);
@@ -62,7 +62,7 @@ test("keeps the AI and static build self-contained", async () => {
   assert.match(collapse, /export function resolveCollapse/);
   assert.match(random, /export function createSeededRandom/);
   assert.match(random, /export function deriveSeed/);
-  assert.match(battlefield, /export function generateSkirmishBattlefield/);
+  assert.match(battlefield, /export function generateArenaBattlefield/);
   assert.match(draft, /export function generateDraftOffers/);
   assert.match(page, /getCollapseDecision/);
   assert.match(page, /removePendingPieces/);
@@ -70,7 +70,7 @@ test("keeps the AI and static build self-contained", async () => {
   assert.doesNotMatch(page, /function getRelations/);
   assert.match(page, /strategies:\s*\{[\s\S]*balanced/);
   assert.match(page, /type SettlementFrame/);
-  assert.match(page, /type Ruleset = "classic" \| "skirmish"/);
+  assert.match(page, /type Ruleset = "classic" \| "arena"/);
   assert.match(page, /rulesetCopy/);
   assert.match(page, /function openReplay/);
   assert.match(page, /t\.actions\.nextStep/);

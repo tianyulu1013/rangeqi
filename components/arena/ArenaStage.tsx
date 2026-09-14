@@ -6,14 +6,14 @@ import { PieceHelpDialog } from "../game/PlayerHand";
 import type { PieceType, Player, TerrainCell } from "../../lib/game/types";
 import { useState } from "react";
 
-export type SkirmishStageName =
+export type ArenaStageName =
   | "battlefield"
   | "core-draft"
   | "advanced-draft"
   | "battle";
 
-type SkirmishStageCopy = {
-  skirmish: string;
+type ArenaStageCopy = {
+  arena: string;
   battlefield: string;
   battlefieldIntro: string;
   seed: string;
@@ -50,14 +50,14 @@ function BattlefieldPreview({
   const terrainKeys = new Set(terrain.map((cell) => cellKey(cell.row, cell.col)));
 
   return (
-    <div className={`skirmish-map-preview ${compact ? "compact" : ""}`} role="grid" aria-label={label}>
+    <div className={`arena-map-preview ${compact ? "compact" : ""}`} role="grid" aria-label={label}>
       {Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
         const row = Math.floor(index / BOARD_SIZE);
         const col = index % BOARD_SIZE;
         const isFenceCell = terrainKeys.has(cellKey(row, col));
         return (
           <div
-            className={`skirmish-map-cell ${isFenceCell ? "fence" : ""}`}
+            className={`arena-map-cell ${isFenceCell ? "fence" : ""}`}
             key={cellKey(row, col)}
             role="gridcell"
             aria-label={isFenceCell ? "Fence" : `${row + 1},${col + 1}`}
@@ -111,7 +111,7 @@ function RosterSummary({
   );
 }
 
-export function SkirmishStage({
+export function ArenaStage({
   stage,
   matchSeed,
   terrain,
@@ -134,7 +134,7 @@ export function SkirmishStage({
   onChooseDraft,
   onBeginBattle,
 }: {
-  stage: SkirmishStageName;
+  stage: ArenaStageName;
   matchSeed: string;
   terrain: TerrainCell[];
   seedInput: string;
@@ -148,7 +148,7 @@ export function SkirmishStage({
   pieceDisplay: PieceDisplay;
   players: Record<Player, string>;
   pieces: PieceCopy;
-  copy: SkirmishStageCopy;
+  copy: ArenaStageCopy;
   onSeedInputChange: (value: string) => void;
   onApplySeed: () => void;
   onCopySeed: () => void;
@@ -162,10 +162,10 @@ export function SkirmishStage({
 
   if (stage === "battlefield") {
     return (
-      <section className="skirmish-stage-panel battlefield-stage" aria-live="polite">
-        <p className="eyebrow">{copy.skirmish}</p>
+      <section className="arena-stage-panel battlefield-stage" aria-live="polite">
+        <p className="eyebrow">{copy.arena}</p>
         <h2>{copy.battlefield}</h2>
-        <p className="skirmish-stage-intro">{copy.battlefieldIntro}</p>
+        <p className="arena-stage-intro">{copy.battlefieldIntro}</p>
 
         <div className="seed-panel">
           <div className="seed-heading">
@@ -191,20 +191,20 @@ export function SkirmishStage({
           </div>
         </div>
 
-        <div className="skirmish-map-heading">
+        <div className="arena-map-heading">
           <span>{copy.battlefield}</span>
           <small>{terrain.length} {copy.fence}</small>
         </div>
-        <div className="skirmish-map-layout">
+        <div className="arena-map-layout">
           <BattlefieldPreview terrain={terrain} label={copy.battlefield} />
-          <div className="skirmish-map-legend" aria-label={copy.fenceLegend}>
-            <span className="skirmish-legend-item">
-              <i className="skirmish-legend-swatch" aria-hidden="true">▦</i>
+          <div className="arena-map-legend" aria-label={copy.fenceLegend}>
+            <span className="arena-legend-item">
+              <i className="arena-legend-swatch" aria-hidden="true">▦</i>
               <span>{copy.fenceLegend}</span>
             </span>
           </div>
         </div>
-        <button type="button" className="primary-button skirmish-stage-action" onClick={onBeginDraft}>
+        <button type="button" className="primary-button arena-stage-action" onClick={onBeginDraft}>
           {copy.beginDraft}
         </button>
       </section>
@@ -221,21 +221,21 @@ export function SkirmishStage({
 
   return (
     <>
-    <section className={`skirmish-stage-panel draft-stage ${draftTier}-draft-stage ${draftComplete ? "draft-complete-stage" : ""}`} aria-live="polite">
-      <div className="skirmish-stage-heading">
+    <section className={`arena-stage-panel draft-stage ${draftTier}-draft-stage ${draftComplete ? "draft-complete-stage" : ""}`} aria-live="polite">
+      <div className="arena-stage-heading">
         <div>
           <p className="eyebrow">{tierLabel}</p>
           <h2>{copy.draft}</h2>
         </div>
         <strong>{draftTier.toUpperCase()} {Math.min(draftRound + 1, 10)}/10</strong>
       </div>
-      {!draftComplete && <p className="skirmish-stage-intro">{copy.chooseDraft}</p>}
+      {!draftComplete && <p className="arena-stage-intro">{copy.chooseDraft}</p>}
 
-      <div className="skirmish-map-layout compact">
+      <div className="arena-map-layout compact">
         <BattlefieldPreview terrain={terrain} label={copy.battlefield} compact />
-        <div className="skirmish-map-legend" aria-label={copy.fenceLegend}>
-          <span className="skirmish-legend-item">
-            <i className="skirmish-legend-swatch" aria-hidden="true">▦</i>
+        <div className="arena-map-legend" aria-label={copy.fenceLegend}>
+          <span className="arena-legend-item">
+            <i className="arena-legend-swatch" aria-hidden="true">▦</i>
             <span>{copy.fenceLegend}</span>
           </span>
         </div>
@@ -306,7 +306,7 @@ export function SkirmishStage({
               rosterLabel={copy.roster}
             />
           </div>
-          <button type="button" className="primary-button skirmish-stage-action" onClick={onBeginBattle}>
+          <button type="button" className="primary-button arena-stage-action" onClick={onBeginBattle}>
             {copy.beginBattle}
           </button>
         </div>

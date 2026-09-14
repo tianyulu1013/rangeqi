@@ -29,7 +29,7 @@ export type PieceType =
   | "selector"
   | "ram"
   | "sentry"
-  | "engineer"
+  | "mason"
   | "knight"
   | "fortress";
 

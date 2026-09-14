@@ -125,7 +125,7 @@ button {
   border-color: rgba(200, 164, 93, 0.42);
 }
 
-.home-mode-card.skirmish {
+.home-mode-card.arena {
   border-color: rgba(39, 127, 131, 0.55);
 }
 
@@ -164,7 +164,7 @@ button {
   line-height: 1;
 }
 
-.home-mode-card.skirmish .home-mode-arrow {
+.home-mode-card.arena .home-mode-arrow {
   color: #7ec6c4;
 }
 
@@ -662,7 +662,7 @@ button {
   outline-offset: 2px;
 }
 
-.skirmish-map-heading {
+.arena-map-heading {
   width: min(100%, 440px);
   display: flex;
   align-items: baseline;
@@ -671,12 +671,12 @@ button {
   font-size: 13px;
 }
 
-.skirmish-map-heading small {
+.arena-map-heading small {
   color: var(--gold);
   font-size: 12px;
 }
 
-.skirmish-map-layout {
+.arena-map-layout {
   width: min(100%, 440px);
   display: grid;
   grid-template-columns: minmax(0, 300px) auto;
@@ -685,7 +685,7 @@ button {
   gap: 18px;
 }
 
-.skirmish-map-preview {
+.arena-map-preview {
   width: min(100%, 300px);
   aspect-ratio: 1;
   display: grid;
@@ -698,7 +698,7 @@ button {
   background: rgba(0, 0, 0, 0.16);
 }
 
-.skirmish-map-cell {
+.arena-map-cell {
   min-width: 0;
   min-height: 0;
   aspect-ratio: 1;
@@ -709,18 +709,18 @@ button {
   background: rgba(255, 255, 255, 0.045);
 }
 
-.skirmish-map-cell.fence {
+.arena-map-cell.fence {
   color: #151d1c;
   border-color: rgba(19, 27, 26, 0.7);
   background: repeating-linear-gradient(135deg, #a9a69b 0 5px, #77766f 5px 8px);
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.14);
 }
 
-.skirmish-map-cell.fence span {
+.arena-map-cell.fence span {
   font-size: clamp(14px, 3vw, 24px);
 }
 
-.skirmish-map-legend {
+.arena-map-legend {
   display: grid;
   gap: 8px;
   justify-items: start;
@@ -730,13 +730,13 @@ button {
   text-align: left;
 }
 
-.skirmish-legend-item {
+.arena-legend-item {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
-.skirmish-legend-swatch {
+.arena-legend-swatch {
   display: grid;
   width: 28px;
   height: 28px;
@@ -950,17 +950,17 @@ button {
 }
 
 @media (max-width: 520px) {
-  .skirmish-map-layout {
+  .arena-map-layout {
     grid-template-columns: 1fr;
     gap: 10px;
   }
 
-  .skirmish-map-preview {
+  .arena-map-preview {
     justify-self: center;
     width: min(100%, 280px);
   }
 
-  .skirmish-map-legend {
+  .arena-map-legend {
     justify-self: center;
   }
 
@@ -986,7 +986,7 @@ button {
   }
 }
 
-.ruleset-skirmish:not(.skirmish-stage-battle) .player-panel {
+.ruleset-arena:not(.arena-stage-battle) .player-panel {
   display: none;
 }
 
@@ -4285,7 +4285,7 @@ button {
 
   .mobile-undo-button,
   .ruleset-classic .header-actions .restart-button,
-  .ruleset-skirmish .header-actions .restart-button {
+  .ruleset-arena .header-actions .restart-button {
     display: inline-flex !important;
     width: 42px;
     min-width: 42px;
@@ -4377,7 +4377,7 @@ button {
   }
 }
 
-.game-shell.ruleset-skirmish:not(.skirmish-stage-battle) .player-panel {
+.game-shell.ruleset-arena:not(.arena-stage-battle) .player-panel {
   display: none;
 }
 
@@ -4660,7 +4660,7 @@ button {
   line-height: 1.5;
 }
 
-.skirmish-stage-panel {
+.arena-stage-panel {
   width: min(100%, 680px);
   min-height: min(58dvh, 560px);
   display: grid;
@@ -4676,7 +4676,7 @@ button {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
-.skirmish-stage-panel h2 {
+.arena-stage-panel h2 {
   margin: 0;
   color: #f6f0e4;
   font-family: "STKaiti", "KaiTi", serif;
@@ -4685,14 +4685,14 @@ button {
   letter-spacing: 0.06em;
 }
 
-.skirmish-stage-intro {
+.arena-stage-intro {
   max-width: 440px;
   margin: 0;
   color: rgba(246, 240, 228, 0.68);
   line-height: 1.65;
 }
 
-.skirmish-stage-heading {
+.arena-stage-heading {
   width: min(100%, 560px);
   display: flex;
   align-items: end;
@@ -4701,49 +4701,49 @@ button {
   text-align: left;
 }
 
-.skirmish-stage-heading > div {
+.arena-stage-heading > div {
   display: grid;
   gap: 4px;
 }
 
-.skirmish-stage-heading .eyebrow {
+.arena-stage-heading .eyebrow {
   margin: 0;
 }
 
-.skirmish-stage-heading strong {
+.arena-stage-heading strong {
   color: var(--gold);
   font-size: 12px;
   letter-spacing: 0.1em;
 }
 
-.skirmish-stage-panel .skirmish-map-layout {
+.arena-stage-panel .arena-map-layout {
   width: min(100%, 520px);
 }
 
-.skirmish-stage-panel .skirmish-map-layout.compact {
+.arena-stage-panel .arena-map-layout.compact {
   width: min(100%, 340px);
   grid-template-columns: minmax(0, 180px) auto;
   gap: 12px;
 }
 
-.skirmish-stage-panel .skirmish-map-preview.compact {
+.arena-stage-panel .arena-map-preview.compact {
   width: min(100%, 180px);
   gap: 2px;
   padding: 5px;
   border-radius: 9px;
 }
 
-.skirmish-stage-panel .skirmish-map-preview.compact .skirmish-map-cell {
+.arena-stage-panel .arena-map-preview.compact .arena-map-cell {
   border-radius: 2px;
 }
 
-.skirmish-stage-panel .draft-offers {
+.arena-stage-panel .draft-offers {
   width: min(100%, 560px);
   grid-template-columns: 1fr;
   gap: 9px;
 }
 
-.skirmish-stage-panel .draft-card {
+.arena-stage-panel .draft-card {
   grid-template-columns: 38px 1fr auto;
   align-items: center;
   justify-items: start;
@@ -4752,25 +4752,25 @@ button {
   text-align: left;
 }
 
-.skirmish-stage-panel .draft-card-copy {
+.arena-stage-panel .draft-card-copy {
   min-width: 0;
   display: grid;
   gap: 4px;
 }
 
-.skirmish-stage-panel .draft-card-copy strong {
+.arena-stage-panel .draft-card-copy strong {
   font-size: 15px;
 }
 
-.skirmish-stage-panel .draft-card-copy small {
+.arena-stage-panel .draft-card-copy small {
   min-height: 0;
 }
 
-.skirmish-stage-panel .draft-card-copy em {
+.arena-stage-panel .draft-card-copy em {
   font-size: 10px;
 }
 
-.skirmish-stage-panel .draft-card .range-icon {
+.arena-stage-panel .draft-card .range-icon {
   width: 48px;
   height: 48px;
 }
@@ -4784,21 +4784,21 @@ button {
   border-radius: 8px;
 }
 
-.advanced-draft-stage .skirmish-stage-heading strong,
+.advanced-draft-stage .arena-stage-heading strong,
 .advanced-draft-stage .eyebrow {
   color: #68aee8;
 }
 
-.elite-draft-stage .skirmish-stage-heading strong,
+.elite-draft-stage .arena-stage-heading strong,
 .elite-draft-stage .eyebrow {
   color: #d8ad58;
 }
 
-.skirmish-stage-panel .draft-roster i {
+.arena-stage-panel .draft-roster i {
   position: relative;
 }
 
-.skirmish-stage-panel .draft-roster i b {
+.arena-stage-panel .draft-roster i b {
   position: absolute;
   right: -5px;
   bottom: -4px;
@@ -4950,7 +4950,7 @@ button {
   }
 
   .ruleset-classic .header-actions .rulebook-button,
-  .ruleset-skirmish .header-actions .rulebook-button {
+  .ruleset-arena .header-actions .rulebook-button {
     display: inline-flex;
     width: 34px;
     min-width: 34px;
@@ -4962,12 +4962,12 @@ button {
   }
 
   .ruleset-classic .rulebook-button-label,
-  .ruleset-skirmish .rulebook-button-label {
+  .ruleset-arena .rulebook-button-label {
     display: none;
   }
 
   .ruleset-classic .rulebook-button-icon,
-  .ruleset-skirmish .rulebook-button-icon {
+  .ruleset-arena .rulebook-button-icon {
     display: inline;
   }
 }
@@ -5231,19 +5231,19 @@ button {
 }
 
 @media (max-width: 720px) {
-  .ruleset-skirmish .game-layout {
+  .ruleset-arena .game-layout {
     height: calc(100dvh - 83px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     min-height: 0;
     overflow-y: auto;
     padding: 5px 0 max(8px, env(safe-area-inset-bottom));
   }
 
-  .ruleset-skirmish .board-column {
+  .ruleset-arena .board-column {
     width: 100%;
     align-items: stretch;
   }
 
-  .ruleset-skirmish .skirmish-stage-panel {
+  .ruleset-arena .arena-stage-panel {
     width: 100%;
     min-height: 0;
     gap: 12px;
@@ -5251,74 +5251,74 @@ button {
     border-radius: 14px;
   }
 
-  .ruleset-skirmish .skirmish-stage-panel h2 {
+  .ruleset-arena .arena-stage-panel h2 {
     font-size: 30px;
   }
 
-  .ruleset-skirmish .skirmish-stage-heading {
+  .ruleset-arena .arena-stage-heading {
     width: 100%;
   }
 
-  .ruleset-skirmish .skirmish-stage-heading h2 {
+  .ruleset-arena .arena-stage-heading h2 {
     font-size: 25px;
   }
 
-  .ruleset-skirmish .skirmish-stage-heading strong {
+  .ruleset-arena .arena-stage-heading strong {
     font-size: 10px;
   }
 
-  .ruleset-skirmish .skirmish-stage-intro {
+  .ruleset-arena .arena-stage-intro {
     font-size: 12px;
   }
 
-  .ruleset-skirmish .skirmish-map-heading,
-  .ruleset-skirmish .skirmish-stage-panel .skirmish-map-layout {
+  .ruleset-arena .arena-map-heading,
+  .ruleset-arena .arena-stage-panel .arena-map-layout {
     width: 100%;
   }
 
-  .ruleset-skirmish .skirmish-stage-panel .skirmish-map-layout.compact {
+  .ruleset-arena .arena-stage-panel .arena-map-layout.compact {
     width: min(100%, 300px);
     grid-template-columns: minmax(0, 150px) minmax(0, 1fr);
     gap: 10px;
   }
 
-  .ruleset-skirmish .skirmish-stage-panel .skirmish-map-preview.compact {
+  .ruleset-arena .arena-stage-panel .arena-map-preview.compact {
     width: min(100%, 150px);
   }
 
-  .ruleset-skirmish .skirmish-stage-panel .draft-card {
+  .ruleset-arena .arena-stage-panel .draft-card {
     grid-template-columns: 32px minmax(0, 1fr) 42px;
     gap: 8px;
     padding: 9px 8px;
   }
 
-  .ruleset-skirmish .skirmish-stage-panel .draft-card .mini-piece {
+  .ruleset-arena .arena-stage-panel .draft-card .mini-piece {
     width: 30px;
   }
 
-  .ruleset-skirmish .skirmish-stage-panel .draft-card-copy strong {
+  .ruleset-arena .arena-stage-panel .draft-card-copy strong {
     font-size: 14px;
   }
 
-  .ruleset-skirmish .skirmish-stage-panel .draft-card-copy small {
+  .ruleset-arena .arena-stage-panel .draft-card-copy small {
     font-size: 10px;
   }
 
-  .ruleset-skirmish .skirmish-stage-panel .draft-card .range-icon {
+  .ruleset-arena .arena-stage-panel .draft-card .range-icon {
     width: 42px;
     height: 42px;
   }
 
-  .ruleset-skirmish .skirmish-stage-panel .draft-rosters {
+  .ruleset-arena .arena-stage-panel .draft-rosters {
     grid-template-columns: 1fr;
   }
 
-  .ruleset-skirmish .brand {
+  .ruleset-arena .brand {
     min-width: 0;
     gap: 8px;
   }
 
-  .ruleset-skirmish .home-button {
+  .ruleset-arena .home-button {
     display: inline-flex;
     width: 34px;
     min-width: 34px;
@@ -5329,12 +5329,12 @@ button {
     font-size: 19px;
   }
 
-  .ruleset-skirmish .home-button-label,
-  .ruleset-skirmish .settings-button-label {
+  .ruleset-arena .home-button-label,
+  .ruleset-arena .settings-button-label {
     display: none;
   }
 
-  .ruleset-skirmish .settings-button {
+  .ruleset-arena .settings-button {
     display: grid;
     width: 34px;
     min-width: 34px;
@@ -5343,14 +5343,14 @@ button {
     font-size: 18px;
   }
 
-  .ruleset-skirmish .settings-button-icon {
+  .ruleset-arena .settings-button-icon {
     display: block;
     transform: translateX(1.5px);
   }
 
-  .ruleset-skirmish .header-actions .language-select,
-  .ruleset-skirmish .header-actions .rulebook-button,
-  .ruleset-skirmish .header-actions .restart-button {
+  .ruleset-arena .header-actions .language-select,
+  .ruleset-arena .header-actions .rulebook-button,
+  .ruleset-arena .header-actions .restart-button {
     display: none;
   }
 }
@@ -5384,11 +5384,11 @@ button {
   }
 
   .ruleset-classic .home-button,
-  .ruleset-skirmish .home-button,
+  .ruleset-arena .home-button,
   .ruleset-classic .settings-button,
-  .ruleset-skirmish .settings-button,
+  .ruleset-arena .settings-button,
   .ruleset-classic .header-actions .rulebook-button,
-  .ruleset-skirmish .header-actions .rulebook-button {
+  .ruleset-arena .header-actions .rulebook-button {
     width: 42px;
     min-width: 42px;
     min-height: 42px;
@@ -5429,7 +5429,7 @@ button {
 
   .game-layout,
   .ruleset-classic .game-layout,
-  .ruleset-skirmish .game-layout {
+  .ruleset-arena .game-layout {
     height: calc(100dvh - 55px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     justify-content: flex-start;
     gap: 5px;
@@ -5711,11 +5711,11 @@ body {
 .player-panel,
 .info-card,
 .ruleset-placeholder,
-.skirmish-map-heading,
+.arena-map-heading,
 .draft-panel,
 .draft-card,
 .seed-panel,
-.skirmish-stage-panel,
+.arena-stage-panel,
 .draft-empty-note {
   color: var(--ui-text);
 }
@@ -5762,7 +5762,8 @@ body {
 }
 
 .home-mode-card.classic,
-.home-mode-card.skirmish {
+.home-mode-card.arena,
+.home-mode-card.puzzles {
   border-color: rgba(67, 82, 72, 0.32);
 }
 
@@ -5779,7 +5780,7 @@ body {
 .draft-empty-note,
 .draft-heading small,
 .seed-heading span,
-.skirmish-map-legend {
+.arena-map-legend {
   color: var(--ui-muted);
 }
 
@@ -6257,16 +6258,16 @@ body {
     grid-column: auto;
   }
 
-  .ruleset-skirmish .game-layout {
+  .ruleset-arena .game-layout {
     overflow: hidden;
   }
 
-  .ruleset-skirmish .board-column {
+  .ruleset-arena .board-column {
     height: 100%;
     min-height: 0;
   }
 
-  .ruleset-skirmish .skirmish-stage-panel.draft-stage {
+  .ruleset-arena .arena-stage-panel.draft-stage {
     height: 100%;
     min-height: 0;
     align-content: stretch;
@@ -6274,45 +6275,45 @@ body {
     padding: clamp(0.7rem, 2.8vw, 1.1rem);
   }
 
-  .ruleset-skirmish .skirmish-stage-panel.draft-stage:not(.draft-complete-stage) {
+  .ruleset-arena .arena-stage-panel.draft-stage:not(.draft-complete-stage) {
     grid-template-rows: auto auto auto auto minmax(0, 1fr);
   }
 
-  .ruleset-skirmish .skirmish-stage-panel.draft-complete-stage {
+  .ruleset-arena .arena-stage-panel.draft-complete-stage {
     grid-template-rows: auto auto minmax(0, 1fr);
   }
 
-  .ruleset-skirmish .draft-stage .skirmish-stage-heading {
+  .ruleset-arena .draft-stage .arena-stage-heading {
     align-items: center;
   }
 
-  .ruleset-skirmish .draft-stage .skirmish-stage-heading h2 {
+  .ruleset-arena .draft-stage .arena-stage-heading h2 {
     font-size: clamp(2rem, 8vw, 2.8rem);
   }
 
-  .ruleset-skirmish .draft-stage .skirmish-stage-heading strong {
+  .ruleset-arena .draft-stage .arena-stage-heading strong {
     font-size: clamp(0.75rem, 3.2vw, 1rem);
   }
 
-  .ruleset-skirmish .draft-stage .skirmish-stage-intro {
+  .ruleset-arena .draft-stage .arena-stage-intro {
     font-size: clamp(0.95rem, 3.8vw, 1.15rem);
   }
 
-  .ruleset-skirmish .draft-stage .skirmish-map-layout.compact {
+  .ruleset-arena .draft-stage .arena-map-layout.compact {
     width: min(82vw, 38dvh);
     grid-template-columns: minmax(0, 1fr) auto;
     gap: clamp(0.6rem, 2.5vw, 1rem);
   }
 
-  .ruleset-skirmish .draft-stage .skirmish-map-preview.compact {
+  .ruleset-arena .draft-stage .arena-map-preview.compact {
     width: min(38vw, 19dvh);
   }
 
-  .ruleset-skirmish .draft-stage .skirmish-map-legend {
+  .ruleset-arena .draft-stage .arena-map-legend {
     font-size: clamp(0.8rem, 3.3vw, 1rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-offers {
+  .ruleset-arena .draft-stage .draft-offers {
     width: 100%;
     min-height: 0;
     flex: 1;
@@ -6320,7 +6321,7 @@ body {
     gap: clamp(0.5rem, 1.2dvh, 0.8rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster-progress {
+  .ruleset-arena .draft-stage .draft-roster-progress {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
@@ -6328,27 +6329,27 @@ body {
     padding: clamp(0.45rem, 1.8vw, 0.7rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster-progress > strong {
+  .ruleset-arena .draft-stage .draft-roster-progress > strong {
     white-space: nowrap;
     font-size: clamp(0.72rem, 3vw, 0.95rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster-progress > .draft-roster-pieces {
+  .ruleset-arena .draft-stage .draft-roster-progress > .draft-roster-pieces {
     justify-content: flex-start;
     gap: clamp(0.35rem, 1.6vw, 0.65rem);
     overflow: hidden;
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster-progress i {
+  .ruleset-arena .draft-stage .draft-roster-progress i {
     flex-direction: row;
     gap: 0.15rem;
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster-progress i .mini-piece {
+  .ruleset-arena .draft-stage .draft-roster-progress i .mini-piece {
     width: clamp(1.75rem, 7.8vw, 2.5rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster-progress i b {
+  .ruleset-arena .draft-stage .draft-roster-progress i b {
     font-size: clamp(0.66rem, 2.7vw, 0.85rem);
   }
 
@@ -6362,40 +6363,40 @@ body {
     stroke-linejoin: round;
   }
 
-  .ruleset-skirmish .draft-stage .draft-card {
+  .ruleset-arena .draft-stage .draft-card {
     min-height: 0;
     grid-template-columns: clamp(2.8rem, 12vw, 3.7rem) minmax(0, 1fr) clamp(3rem, 14vw, 4.2rem);
     gap: clamp(0.6rem, 2.7vw, 1rem);
     padding: clamp(0.65rem, 2.5vw, 1rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-card .mini-piece {
+  .ruleset-arena .draft-stage .draft-card .mini-piece {
     width: clamp(2.8rem, 12vw, 3.7rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-card-copy {
+  .ruleset-arena .draft-stage .draft-card-copy {
     gap: clamp(0.2rem, 0.7dvh, 0.45rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-card-copy strong {
+  .ruleset-arena .draft-stage .draft-card-copy strong {
     font-size: clamp(1.05rem, 4.6vw, 1.4rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-card-copy small {
+  .ruleset-arena .draft-stage .draft-card-copy small {
     font-size: clamp(0.78rem, 3.3vw, 1rem);
     line-height: 1.35;
   }
 
-  .ruleset-skirmish .draft-stage .draft-card-copy em {
+  .ruleset-arena .draft-stage .draft-card-copy em {
     font-size: clamp(0.75rem, 3.1vw, 0.95rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-card .range-icon {
+  .ruleset-arena .draft-stage .draft-card .range-icon {
     width: clamp(3rem, 14vw, 4.2rem);
     height: clamp(3rem, 14vw, 4.2rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-complete {
+  .ruleset-arena .draft-stage .draft-complete {
     width: 100%;
     min-height: 0;
     flex: 1;
@@ -6403,30 +6404,30 @@ body {
     gap: clamp(1rem, 2.4dvh, 1.7rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-complete > p {
+  .ruleset-arena .draft-stage .draft-complete > p {
     font-size: clamp(1.6rem, 7vw, 2.4rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-rosters,
-  .ruleset-skirmish .draft-stage .draft-roster {
+  .ruleset-arena .draft-stage .draft-rosters,
+  .ruleset-arena .draft-stage .draft-roster {
     width: 100%;
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster {
+  .ruleset-arena .draft-stage .draft-roster {
     gap: clamp(0.9rem, 2dvh, 1.4rem);
     padding: clamp(1rem, 4vw, 1.5rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster > strong {
+  .ruleset-arena .draft-stage .draft-roster > strong {
     font-size: clamp(1rem, 4.2vw, 1.3rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster > span {
+  .ruleset-arena .draft-stage .draft-roster > span {
     justify-content: center;
     gap: clamp(0.8rem, 4vw, 1.4rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster i {
+  .ruleset-arena .draft-stage .draft-roster i {
     position: static;
     width: auto;
     height: auto;
@@ -6437,44 +6438,44 @@ body {
     background: transparent;
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster i .mini-piece {
+  .ruleset-arena .draft-stage .draft-roster i .mini-piece {
     width: clamp(3.5rem, 15vw, 5rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster i b {
+  .ruleset-arena .draft-stage .draft-roster i b {
     position: static;
     color: var(--ui-text);
     font-size: clamp(0.9rem, 3.8vw, 1.15rem);
     line-height: 1;
   }
 
-  .ruleset-skirmish .draft-stage .skirmish-stage-action {
+  .ruleset-arena .draft-stage .arena-stage-action {
     width: min(100%, 26rem);
     min-height: clamp(3.2rem, 7dvh, 4.2rem);
     font-size: clamp(1.1rem, 4.8vw, 1.45rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster.draft-roster-progress {
+  .ruleset-arena .draft-stage .draft-roster.draft-roster-progress {
     grid-template-columns: auto minmax(0, 1fr);
     gap: clamp(0.45rem, 1.8vw, 0.8rem);
     padding: clamp(0.45rem, 1.8vw, 0.7rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster.draft-roster-progress > .draft-roster-pieces {
+  .ruleset-arena .draft-stage .draft-roster.draft-roster-progress > .draft-roster-pieces {
     justify-content: flex-start;
     gap: clamp(0.35rem, 1.6vw, 0.65rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster.draft-roster-progress i {
+  .ruleset-arena .draft-stage .draft-roster.draft-roster-progress i {
     flex-direction: row;
     gap: 0.15rem;
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster.draft-roster-progress i .mini-piece {
+  .ruleset-arena .draft-stage .draft-roster.draft-roster-progress i .mini-piece {
     width: clamp(1.75rem, 7.8vw, 2.5rem);
   }
 
-  .ruleset-skirmish .draft-stage .draft-roster.draft-roster-progress i b {
+  .ruleset-arena .draft-stage .draft-roster.draft-roster-progress i b {
     font-size: clamp(0.66rem, 2.7vw, 0.85rem);
   }
 }
@@ -6526,7 +6527,7 @@ body {
 }
 
 @media (max-width: 720px) {
-  .game-shell.ruleset-skirmish.skirmish-stage-battle.phase-placement .inventory {
+  .game-shell.ruleset-arena.arena-stage-battle.phase-placement .inventory {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 4px;
@@ -6580,7 +6581,7 @@ body {
 }
 
 @media (max-width: 360px) {
-  .game-shell.ruleset-skirmish.skirmish-stage-battle.phase-placement .inventory {
+  .game-shell.ruleset-arena.arena-stage-battle.phase-placement .inventory {
     gap: 2px;
   }
 
@@ -6765,34 +6766,34 @@ body {
   }
 }
 
-/* Skirmish battle inventory uses the available lower screen instead of
+/* Arena battle inventory uses the available lower screen instead of
    shrinking ten possible piece types into five narrow columns. */
 @media (max-width: 720px) {
-  .game-shell.ruleset-skirmish.skirmish-stage-battle.phase-placement .inventory {
+  .game-shell.ruleset-arena.arena-stage-battle.phase-placement .inventory {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: clamp(0.3rem, 1.6vw, 0.55rem);
   }
 
-  .game-shell.ruleset-skirmish.skirmish-stage-battle.phase-placement .inventory-piece-shell {
+  .game-shell.ruleset-arena.arena-stage-battle.phase-placement .inventory-piece-shell {
     --tray-visual: clamp(2.25rem, 34cqw, 4rem);
     --tray-gap: clamp(0.35rem, 6cqw, 0.7rem);
   }
 
-  .game-shell.ruleset-skirmish.skirmish-stage-battle.phase-placement .inventory-piece {
+  .game-shell.ruleset-arena.arena-stage-battle.phase-placement .inventory-piece {
     min-height: clamp(4.5rem, 54cqw, 6.25rem);
   }
 
   /* A tall portrait screen has room for four rows, so three wider columns
      keep the piece and its range diagram comfortably readable. */
   @media (min-height: 820px) {
-    .game-shell.ruleset-skirmish.skirmish-stage-battle.phase-placement .inventory {
+    .game-shell.ruleset-arena.arena-stage-battle.phase-placement .inventory {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 
   /* Draft owns five stable vertical slots: heading, instruction, map,
      roster, and three equal offer rows. Selection never changes geometry. */
-  .ruleset-skirmish .skirmish-stage-panel.draft-stage:not(.draft-complete-stage) {
+  .ruleset-arena .arena-stage-panel.draft-stage:not(.draft-complete-stage) {
     grid-template-rows:
       auto
       auto
@@ -6802,20 +6803,20 @@ body {
     overflow: hidden;
   }
 
-  .ruleset-skirmish .draft-stage .skirmish-map-layout.compact {
+  .ruleset-arena .draft-stage .arena-map-layout.compact {
     align-self: stretch;
     height: 100%;
     min-height: 0;
     margin: 0;
   }
 
-  .ruleset-skirmish .draft-stage .skirmish-map-preview.compact {
+  .ruleset-arena .draft-stage .arena-map-preview.compact {
     width: auto;
     height: 100%;
     max-width: 100%;
   }
 
-  .ruleset-skirmish .draft-stage .draft-offers {
+  .ruleset-arena .draft-stage .draft-offers {
     height: 100%;
     min-height: 0;
     grid-template-columns: minmax(0, 1fr);
@@ -6824,22 +6825,22 @@ body {
     contain: layout paint;
   }
 
-  .ruleset-skirmish .draft-stage .draft-card,
-  .ruleset-skirmish .draft-stage .draft-card:not(:disabled):hover,
-  .ruleset-skirmish .draft-stage .draft-card.player-choice,
-  .ruleset-skirmish .draft-stage .draft-card.draft-picked {
+  .ruleset-arena .draft-stage .draft-card,
+  .ruleset-arena .draft-stage .draft-card:not(:disabled):hover,
+  .ruleset-arena .draft-stage .draft-card.player-choice,
+  .ruleset-arena .draft-stage .draft-card.draft-picked {
     height: 100%;
     min-height: 0;
     overflow: hidden;
     transform: none;
   }
 
-  .ruleset-skirmish .draft-stage .draft-card-copy {
+  .ruleset-arena .draft-stage .draft-card-copy {
     min-height: 0;
     overflow: hidden;
   }
 
-  .ruleset-skirmish .draft-stage .draft-card-copy small {
+  .ruleset-arena .draft-stage .draft-card-copy small {
     display: -webkit-box;
     overflow: hidden;
     -webkit-box-orient: vertical;

@@ -13,7 +13,7 @@ const DEFAULT_SEED = "COLLAPSE-GALLERY-V1";
 const DEFAULT_COUNT = 3;
 const BATCH_ATTEMPTS = 10;
 const DEFAULT_CUSTOM_ATTEMPT_LIMIT = 24;
-const SAVED_GALLERY_KEY = "battle-array:puzzle-gallery:v9";
+const SAVED_GALLERY_KEY = "battle-array:puzzle-gallery:v10";
 const EDITOR_PIECE_TYPES = PIECE_TYPES;
 const EDITOR_DIRECTIONS: readonly Direction[] = ["up", "right", "down", "left"];
 const EDITOR_DIRECTIONAL = new Set<PieceType>(["musket", "shield", "halberd", "ram", "charger"]);
@@ -126,7 +126,7 @@ function FormationEditorBoard({ pieces, answerPieces, terrain, pendingId, onCell
         const key = cellKey(row, col);
         const piece = byCell.get(key);
         return (
-          <button type="button" className={`generator-cell ${(row + col) % 2 === 1 ? "dark" : ""} ${obstacles.has(key) ? "obstacle" : ""} ${destroyedObstacles.has(key) ? "editor-destroyed-obstacle" : ""} ${selectedTargets.has(key) ? "editor-target-selected" : ""} ${pending?.anchor && cellKey(...pending.anchor) === key ? "editor-anchor-selected" : ""} ${pending?.type === "engineer" && Math.abs(row - pending.row) + Math.abs(col - pending.col) === 1 && !piece && !obstacles.has(key) ? "editor-target-selected" : ""}`} key={key} onClick={() => onCell(row, col)}>
+          <button type="button" className={`generator-cell ${(row + col) % 2 === 1 ? "dark" : ""} ${obstacles.has(key) ? "obstacle" : ""} ${destroyedObstacles.has(key) ? "editor-destroyed-obstacle" : ""} ${selectedTargets.has(key) ? "editor-target-selected" : ""} ${pending?.anchor && cellKey(...pending.anchor) === key ? "editor-anchor-selected" : ""} ${pending?.type === "mason" && Math.abs(row - pending.row) + Math.abs(col - pending.col) === 1 && !piece && !obstacles.has(key) ? "editor-target-selected" : ""}`} key={key} onClick={() => onCell(row, col)}>
             {obstacles.has(key) && <b aria-label="Obstacle">▦</b>}
             {destroyedObstacles.has(key) && <b aria-label="Destroyed obstacle">✕</b>}
             {piece && <i className={`mini-piece ${piece.player} ${answerIds.has(piece.id) ? "manual-answer-piece" : ""}`}><PieceFace type={piece.type} display="icon" lang="zh" direction={piece.direction} /></i>}
@@ -225,6 +225,7 @@ export function PuzzleGeneratorLab({
     if (initialGenerationStarted.current) return;
     initialGenerationStarted.current = true;
     try {
+      window.localStorage.removeItem("battle-array:puzzle-gallery:v9");
       const saved = JSON.parse(window.localStorage.getItem(SAVED_GALLERY_KEY) ?? "null") as SavedGallery | null;
       if (saved?.puzzles?.length) {
         const validPuzzles = saved.puzzles.filter((puzzle) => !JSON.stringify(puzzle).includes('"warden"'));
@@ -268,7 +269,7 @@ export function PuzzleGeneratorLab({
         setEditorPieces((current) => current.map((piece) => piece.id === pending.id ? change(piece) : piece));
       }
     };
-    if (pending?.type === "engineer") {
+    if (pending?.type === "mason") {
       const occupied = Boolean(existing || existingAnswer);
       const occupiedByBuiltObstacle = editorAnswerPieces.some((piece) =>
         piece.createdObstacle?.row === row && piece.createdObstacle.col === col);
@@ -323,7 +324,7 @@ export function PuzzleGeneratorLab({
         targets: editorTool === "selector" ? [] : undefined,
       };
       setEditorAnswerPieces((current) => [...current.filter((piece) => piece.row !== row || piece.col !== col), answerPiece]);
-      setEditorPendingId(editorTool === "selector" || editorTool === "sentry" || editorTool === "engineer" ? answerPiece.id : null);
+      setEditorPendingId(editorTool === "selector" || editorTool === "sentry" || editorTool === "mason" ? answerPiece.id : null);
       return;
     }
     setManualValidation(null);
@@ -373,7 +374,7 @@ export function PuzzleGeneratorLab({
       targets: editorTool === "selector" ? [] : undefined,
     };
     setEditorPieces((current) => [...current.filter((candidate) => candidate.row !== row || candidate.col !== col), piece]);
-    setEditorPendingId(editorTool === "selector" || editorTool === "sentry" || editorTool === "engineer" ? piece.id : null);
+    setEditorPendingId(editorTool === "selector" || editorTool === "sentry" || editorTool === "mason" ? piece.id : null);
   }
 
   function solveEditorFormation() {
@@ -464,7 +465,7 @@ export function PuzzleGeneratorLab({
   function exportPuzzle(puzzle: GeneratedPuzzle) {
     const payload = JSON.stringify({
       format: "battle-array-puzzle",
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       settings: { seed, minHandSize, maxHandSize, minRounds, theme },
       puzzle,
@@ -480,11 +481,11 @@ export function PuzzleGeneratorLab({
   const customFormationReady = editorPieces.some((piece) => piece.player === "red") &&
     editorPieces.every((piece) => piece.type !== "sentry" || Boolean(piece.anchor)) &&
     editorPieces.every((piece) => piece.type !== "selector" || piece.targets?.length === 4) &&
-    editorPieces.every((piece) => piece.type !== "engineer" || Boolean(piece.createdObstacle));
+    editorPieces.every((piece) => piece.type !== "mason" || Boolean(piece.createdObstacle));
   const manualAnswerReady = customFormationReady && editorAnswerPieces.length > 0 &&
     editorAnswerPieces.every((piece) => piece.type !== "sentry" || Boolean(piece.anchor)) &&
     editorAnswerPieces.every((piece) => piece.type !== "selector" || piece.targets?.length === 4) &&
-    editorAnswerPieces.every((piece) => piece.type !== "engineer" || Boolean(piece.createdObstacle));
+    editorAnswerPieces.every((piece) => piece.type !== "mason" || Boolean(piece.createdObstacle));
 
   return (
     <section className="generator-lab">
@@ -560,8 +561,8 @@ export function PuzzleGeneratorLab({
             <p>{editorPendingId !== null
               ? ([...editorPieces, ...editorAnswerPieces].find((piece) => piece.id === editorPendingId)?.type === "sentry"
                   ? (lang === "zh" ? "现在点击哨兵要守护的障碍。" : "Now choose the obstacle guarded by the Sentry.")
-                  : [...editorPieces, ...editorAnswerPieces].find((piece) => piece.id === editorPendingId)?.type === "engineer"
-                    ? (lang === "zh" ? "现在点击 Engineer 上下左右相邻的空格来建造障碍。" : "Now choose an orthogonally adjacent empty tile for the Engineer's Obstacle.")
+                  : [...editorPieces, ...editorAnswerPieces].find((piece) => piece.id === editorPendingId)?.type === "mason"
+                    ? (lang === "zh" ? "现在点击 Mason 上下左右相邻的空格来建造障碍。" : "Now choose an orthogonally adjacent empty tile for the Mason's Obstacle.")
                     : (lang === "zh" ? "现在依次选择神射手的四个目标格。" : "Now choose the Sharpshooter's four target cells."))
               : (lang === "zh" ? "点击格子放置；方向棋再次点击同一格会顺时针旋转。" : "Click to place. Click a directional piece again to rotate it clockwise.")}</p>
             <button className="quiet-button" onClick={() => {

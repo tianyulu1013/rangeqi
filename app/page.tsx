@@ -12,9 +12,9 @@ import { PieceTray, PlayerHand } from "../components/game/PlayerHand";
 import { PieceFace, RangeIcon } from "../components/game/PieceVisuals";
 import type { Language, PieceDisplay } from "../components/game/PieceVisuals";
 import {
-  SkirmishStage,
-} from "../components/skirmish/SkirmishStage";
-import type { SkirmishStageName } from "../components/skirmish/SkirmishStage";
+  ArenaStage,
+} from "../components/arena/ArenaStage";
+import type { ArenaStageName } from "../components/arena/ArenaStage";
 import { BOARD_SIZE, cellKey, findObstacleInDirection, isLegalPlacement } from "../lib/game/board";
 import { PIECE_CONFIG, PIECE_TYPES, PIECES_PER_PLAYER } from "../lib/game/pieces";
 import {
@@ -33,7 +33,7 @@ import {
   settleForEvaluation,
 } from "../lib/game/collapse";
 import { createMatchSeed } from "../lib/game/random";
-import { generateSkirmishBattlefield } from "../lib/game/battlefield";
+import { generateArenaBattlefield } from "../lib/game/battlefield";
 import { PUZZLE_LEVELS } from "../lib/game/puzzles";
 import type { PuzzleHandEntry, PuzzleLevel } from "../lib/game/puzzles";
 import { evaluatePuzzleGoal } from "../lib/game/puzzleGenerator";
@@ -52,8 +52,8 @@ import type { CollapseLayer, CollapseSnapshot, Direction, Piece, PieceType, Play
 import type { CollapsePlaybackEvent, CollapsePlaybackState } from "../lib/game/collapsePlayback";
 
 type Phase = "placement" | "ready" | "settling" | "finished";
-type Ruleset = "classic" | "skirmish";
-type AppScreen = "home" | "classic" | "skirmish" | "puzzle" | "generator";
+type Ruleset = "classic" | "arena";
+type AppScreen = "home" | "classic" | "arena" | "puzzle" | "generator";
 type ColorTheme = "standard" | "vivid" | "accessible";
 type StrategyStyle = "balanced" | "aggressive" | "defensive" | "territorial";
 type AiStyle = StrategyStyle | "random";
@@ -121,7 +121,7 @@ const PIECE_LAB_TERRAIN: TerrainCell[] = [
 ];
 const PIECE_LAB_TIERS: { key: "core" | "advanced" | "elite"; types: PieceType[] }[] = [
   { key: "core", types: ["guard", "scout", "archer", "knight", "shield", "halberd"] },
-  { key: "advanced", types: ["cannon", "musket", "crossbow", "lancer", "sentry", "ram", "engineer"] },
+  { key: "advanced", types: ["cannon", "musket", "crossbow", "lancer", "sentry", "ram", "mason"] },
   { key: "elite", types: ["fortress", "selector", "charger"] },
 ];
 
@@ -136,7 +136,7 @@ const COLLAPSE_BREAK_MS = 650;
 const LANCER_CHARGE_MS = 460;
 const REPLAY_MARK_MS = 320;
 const REPLAY_RECALCULATE_MS = 650;
-const SAVED_MATCH_KEY = "battle-array:match:v1";
+const SAVED_MATCH_KEY = "battle-array:match:v2";
 
 const I18N = {
   zh: {
@@ -158,7 +158,7 @@ const I18N = {
       selector: { name: "神射手", mark: "神射", desc: "放下后，从以自身为中心的 5×5 范围内选择四格；可以选择有棋子的格，不能选择自身或障碍。" },
       ram: { name: "冲车", mark: "冲", desc: "放置时选择朝向；控制正前方连续三格。若紧邻的正前方是障碍，落子时将其撞毁。" },
       sentry: { name: "哨兵", mark: "哨", desc: "放下后，从以自身为中心的 5×5 范围内选择一个障碍；控制该障碍上下左右四格，范围从障碍位置计算。" },
-      engineer: { name: "Engineer", mark: "Build", desc: "落子后在相邻空格建造一个中立障碍。以该障碍为中心，控制除 Engineer 所在格之外的三个正交相邻格；障碍被摧毁后失去范围。" },
+      mason: { name: "Mason", mark: "Build", desc: "落子后在相邻空格建造一个中立障碍。以该障碍为中心，控制除 Mason 所在格之外的三个正交相邻格；障碍被摧毁后失去范围。" },
     },
     strategies: {
       balanced: { label: "均衡", desc: "兼顾威胁、互保与后期清算" },
@@ -295,7 +295,7 @@ const I18N = {
       selector: { name: "Sharpshooter", mark: "Aim", desc: "After placing, choose 4 tiles within the 5×5 area centered on it. Occupied tiles are valid; its own tile and Obstacles are not." },
       ram: { name: "Battering Ram", mark: "Ram", desc: "Choose a facing when placed. Controls the next 3 tiles forward and destroys the nearest Obstacle within those 3 tiles." },
       sentry: { name: "Sentry", mark: "Sentry", desc: "After placing, choose an Obstacle within the 5×5 area centered on it. Controls the 4 orthogonal tiles around that Obstacle, measured from the Obstacle." },
-      engineer: { name: "Engineer", mark: "Build", desc: "After placing, build a neutral Obstacle on an orthogonally adjacent empty tile. Controls the other 3 orthogonal tiles around that Obstacle; destroying it removes this range." },
+      mason: { name: "Mason", mark: "Build", desc: "After placing, build a neutral Obstacle on an orthogonally adjacent empty tile. Controls the other 3 orthogonal tiles around that Obstacle; destroying it removes this range." },
     },
     strategies: {
       balanced: { label: "Balanced", desc: "Balance attack, support and endgame" },
@@ -565,7 +565,7 @@ function getPlacementVariants(
       .filter((obstacle) => Math.max(Math.abs(obstacle.row - row), Math.abs(obstacle.col - col)) <= 2)
       .map((obstacle) => ({ anchor: [obstacle.row, obstacle.col] as [number, number] }));
   }
-  if (type === "engineer") {
+  if (type === "mason") {
     return [[-1, 0], [1, 0], [0, -1], [0, 1]].flatMap(([dr, dc]) => {
       const targetRow = row + dr;
       const targetCol = col + dc;
@@ -802,8 +802,8 @@ export default function Home() {
   const [musketTestMode, setMusketTestMode] = useState(false);
   const [testPieceType, setTestPieceType] = useState<PieceType>("musket");
   const [selectorTargets, setSelectorTargets] = useState<[number, number][]>([]);
-  const [skirmishStage, setSkirmishStage] =
-    useState<SkirmishStageName>("battlefield");
+  const [arenaStage, setArenaStage] =
+    useState<ArenaStageName>("battlefield");
   const [matchSeed, setMatchSeed] = useState("");
   const [terrain, setTerrain] = useState<TerrainCell[]>([]);
   const [seedInput, setSeedInput] = useState("");
@@ -844,8 +844,8 @@ export default function Home() {
       ? {
         classic: "Classic",
         classicDescription: "相同军队，相同战场，纯粹比较布阵。",
-        skirmish: "Skirmish",
-        skirmishDescription: "面对每局不同的战场，临场构筑你的军队。",
+        arena: "Arena",
+        arenaDescription: "面对每局不同的战场，临场构筑你的军队。",
         puzzles: "战阵谜题",
         puzzlesDescription: "放完给定棋子，在 Collapse 中消灭全部敌军。",
         battlefieldIntro: "先确认本局地形，再开始征募。",
@@ -856,7 +856,7 @@ export default function Home() {
         beginBattle: "开始布阵",
         advancedUnavailable: "高级棋子加入后，这里会开启高级 Draft。",
         description: "相同军队，相同战场，纯粹比较布阵。",
-        comingSoon: "Skirmish 开发中",
+        comingSoon: "Arena 开发中",
         returnToClassic: "返回 Classic",
         returnHome: "返回",
         seed: "当前种子",
@@ -876,8 +876,8 @@ export default function Home() {
       : {
         classic: "Classic",
         classicDescription: "Same armies. Same battlefield. Pure formation strategy.",
-        skirmish: "Skirmish",
-        skirmishDescription: "Draft your army for a different battlefield every match.",
+        arena: "Arena",
+        arenaDescription: "Draft your army for a different battlefield every match.",
         puzzles: "Puzzles",
         puzzlesDescription: "Place every given piece, then eliminate all enemies in Collapse.",
         battlefieldIntro: "Confirm this match's terrain before drafting.",
@@ -888,7 +888,7 @@ export default function Home() {
         beginBattle: "Begin Placement",
         advancedUnavailable: "Advanced Draft will open when advanced pieces are added.",
         description: "Same armies. Same battlefield. Pure formation strategy.",
-        comingSoon: "Skirmish is in development",
+        comingSoon: "Arena is in development",
         returnToClassic: "Return to Classic",
         returnHome: "Back",
         seed: "Current seed",
@@ -935,7 +935,7 @@ export default function Home() {
   const humanRoster = humanPlayer === "red" ? draftRedRoster : draftBlueRoster;
   const placementReady =
     puzzleActive || ruleset === "classic" ||
-    (ruleset === "skirmish" && skirmishStage === "battle" && draftComplete);
+    (ruleset === "arena" && arenaStage === "battle" && draftComplete);
   const targetPiecesPerPlayer = musketTestMode && ruleset === "classic"
     ? BOARD_SIZE * BOARD_SIZE
     : collapseTestMode && ruleset === "classic"
@@ -956,7 +956,7 @@ export default function Home() {
             ? 99
             : collapseTestMode && ruleset === "classic"
             ? type === "guard" ? 4 : 0
-            : ruleset === "skirmish"
+            : ruleset === "arena"
             ? (player === "red" ? draftRedRoster : draftBlueRoster).filter(
                 (rosterType) => rosterType === type,
               ).length
@@ -993,10 +993,10 @@ export default function Home() {
 
   const selectorEligibleKeys = useMemo(() => {
     const cells = new Set<string>();
-    if (!placementPreview || (placementPreview.type !== "selector" && placementPreview.type !== "sentry" && placementPreview.type !== "engineer")) {
+    if (!placementPreview || (placementPreview.type !== "selector" && placementPreview.type !== "sentry" && placementPreview.type !== "mason")) {
       return cells;
     }
-    if (placementPreview.type === "engineer") {
+    if (placementPreview.type === "mason") {
       for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
         const row = placementPreview.row + dr;
         const col = placementPreview.col + dc;
@@ -1062,7 +1062,7 @@ export default function Home() {
         (puzzleActive || musketTestMode || drag.player === humanPlayer) &&
         inventory[drag.player][drag.type] > 0 &&
         isLegalPlacement(row, col, pieces, terrain) &&
-        (drag.type !== "engineer" || getPlacementVariants("engineer", row, col, drag.player, pieces, terrain).length > 0);
+        (drag.type !== "mason" || getPlacementVariants("mason", row, col, drag.player, pieces, terrain).length > 0);
       const nextDrag: PlacementDrag = {
         ...drag,
         x: projectedX,
@@ -1430,6 +1430,7 @@ export default function Home() {
   useEffect(() => {
     let restoredScreen: AppScreen = "home";
     try {
+      window.localStorage.removeItem("battle-array:match:v1");
       const raw = window.localStorage.getItem(SAVED_MATCH_KEY);
       if (raw?.includes('"warden"')) {
         window.localStorage.removeItem(SAVED_MATCH_KEY);
@@ -1437,7 +1438,7 @@ export default function Home() {
         setActiveAiStyle(pickRandomStrategy());
       } else if (raw) {
         const saved = JSON.parse(raw);
-        if (saved.version === 1 && saved.musketTestMode) {
+        if (saved.version === 2 && saved.musketTestMode) {
           // The Piece Lab is disposable tooling, never a resumable match.
           // Older builds persisted it as Classic and could reopen Classic in lab state.
           setLang(saved.lang ?? "en");
@@ -1450,7 +1451,7 @@ export default function Home() {
           setRuleset("classic");
           setMusketTestMode(false);
           setCollapseTestMode(false);
-        } else if (saved.version === 1) {
+        } else if (saved.version === 2) {
           setPieces(saved.pieces ?? []);
           setLang(saved.lang ?? "en");
           setFirstChoice(saved.firstChoice ?? "random");
@@ -1468,13 +1469,13 @@ export default function Home() {
           setRuleset(saved.ruleset ?? "classic");
           setCollapseTestMode(PUBLIC_RELEASE ? false : saved.collapseTestMode ?? false);
           setMusketTestMode(false);
-          setSkirmishStage(saved.skirmishStage ?? "battlefield");
+          setArenaStage(saved.arenaStage ?? "battlefield");
           setMatchSeed(saved.matchSeed ?? "");
           setTerrain(saved.terrain ?? []);
           const savedOffers = (saved.draftOffers ?? []) as DraftOffer[];
           const migrateDraft =
-            saved.ruleset === "skirmish" &&
-            saved.skirmishStage !== "battle" &&
+            saved.ruleset === "arena" &&
+            saved.arenaStage !== "battle" &&
             !hasCurrentDraftSchedule(savedOffers);
           if (migrateDraft) {
             const seed = saved.matchSeed || createMatchSeed();
@@ -1626,7 +1627,7 @@ export default function Home() {
   useEffect(() => {
     if (!hasHydrated || musketTestMode || screen === "puzzle" || screen === "generator") return;
     window.localStorage.setItem(SAVED_MATCH_KEY, JSON.stringify({
-      version: 1,
+      version: 2,
       pieces,
       lang,
       firstChoice,
@@ -1640,7 +1641,7 @@ export default function Home() {
       screen,
       ruleset,
       collapseTestMode,
-      skirmishStage,
+      arenaStage,
       matchSeed,
       terrain,
       draftOffers,
@@ -1653,7 +1654,7 @@ export default function Home() {
       activeAiStyle,
       showResult,
     }));
-  }, [activeAiStyle, aiStyle, collapseTestMode, colorTheme, currentPlayer, draftAiChoices, draftBlueRoster, draftOffers, draftRedRoster, draftRound, firstChoice, hasHydrated, humanPlayer, lang, matchSeed, musketTestMode, pendingIds, phase, pieces, round, ruleset, screen, settlementFrames, settlementPause, showResult, skirmishStage, terrain]);
+  }, [activeAiStyle, aiStyle, collapseTestMode, colorTheme, currentPlayer, draftAiChoices, draftBlueRoster, draftOffers, draftRedRoster, draftRound, firstChoice, hasHydrated, humanPlayer, lang, matchSeed, musketTestMode, pendingIds, phase, pieces, round, ruleset, screen, settlementFrames, settlementPause, showResult, arenaStage, terrain]);
 
   useEffect(() => () => {
     if (draftAdvanceTimerRef.current !== null) {
@@ -2054,7 +2055,7 @@ export default function Home() {
       !isLegalPlacement(row, col, pieces, terrain) ||
       inventory[placingPlayer][type] <= 0
     ) return;
-    if (type === "engineer" && (
+    if (type === "mason" && (
       !createdObstacle ||
       Math.abs(createdObstacle.row - row) + Math.abs(createdObstacle.col - col) !== 1 ||
       !isLegalPlacement(createdObstacle.row, createdObstacle.col, pieces, terrain)
@@ -2116,7 +2117,7 @@ export default function Home() {
 
   function activateCell(row: number, col: number) {
     if (placementPreview) {
-      if (placementPreview.type === "engineer") {
+      if (placementPreview.type === "mason") {
         if (!selectorEligibleKeys.has(cellKey(row, col))) return;
         commitPlacement(
           placementPreview.type,
@@ -2203,8 +2204,8 @@ export default function Home() {
       return;
     }
 
-    if (selectedType === "selector" || selectedType === "sentry" || selectedType === "engineer") {
-      if (selectedType === "engineer" && getPlacementVariants(selectedType, row, col, currentPlayer, pieces, terrain).length === 0) return;
+    if (selectedType === "selector" || selectedType === "sentry" || selectedType === "mason") {
+      if (selectedType === "mason" && getPlacementVariants(selectedType, row, col, currentPlayer, pieces, terrain).length === 0) return;
       setPlacementPreview({
         player: currentPlayer,
         type: selectedType,
@@ -2226,7 +2227,7 @@ export default function Home() {
 
   function movePlacement(row: number, col: number) {
     if (!placementPreview || !isLegalPlacement(row, col, pieces, terrain)) return;
-    if (placementPreview.type === "engineer" && getPlacementVariants("engineer", row, col, placementPreview.player, pieces, terrain).length === 0) return;
+    if (placementPreview.type === "mason" && getPlacementVariants("mason", row, col, placementPreview.player, pieces, terrain).length === 0) return;
     if (row !== placementPreview.row || col !== placementPreview.col) {
       setSelectorTargets([]);
     }
@@ -2382,11 +2383,11 @@ export default function Home() {
       return;
     }
     setHumanPlayer(resolveHumanPlayer(firstChoice));
-    if (ruleset === "skirmish") {
-      setSkirmishStage("battlefield");
+    if (ruleset === "arena") {
+      setArenaStage("battlefield");
       const nextSeed = createMatchSeed();
       setMatchSeed(nextSeed);
-      setTerrain(generateSkirmishBattlefield(nextSeed).terrain);
+      setTerrain(generateArenaBattlefield(nextSeed).terrain);
       setSeedInput("");
       setSeedCopied(false);
       resetDraft(nextSeed);
@@ -2469,11 +2470,11 @@ export default function Home() {
 
   function changeRuleset(nextRuleset: Ruleset) {
     setRuleset(nextRuleset);
-    setSkirmishStage(nextRuleset === "skirmish" ? "battlefield" : "battle");
-    if (nextRuleset === "skirmish") {
+    setArenaStage(nextRuleset === "arena" ? "battlefield" : "battle");
+    if (nextRuleset === "arena") {
       const nextSeed = createMatchSeed();
       setMatchSeed(nextSeed);
-      setTerrain(generateSkirmishBattlefield(nextSeed).terrain);
+      setTerrain(generateArenaBattlefield(nextSeed).terrain);
       resetDraft(nextSeed);
     } else {
       setTerrain([]);
@@ -2492,8 +2493,8 @@ export default function Home() {
     return (
       pieces.length > 0 ||
       phase !== "placement" ||
-      (ruleset === "skirmish" && skirmishStage !== "battlefield") ||
-      (ruleset === "skirmish" && draftRound > 0)
+      (ruleset === "arena" && arenaStage !== "battlefield") ||
+      (ruleset === "arena" && draftRound > 0)
     );
   }
 
@@ -2561,29 +2562,29 @@ export default function Home() {
     setScreen("classic");
   }
 
-  function beginSkirmishDraft() {
-    if (ruleset !== "skirmish") return;
-    setSkirmishStage("core-draft");
+  function beginArenaDraft() {
+    if (ruleset !== "arena") return;
+    setArenaStage("core-draft");
   }
 
-  function beginSkirmishBattle() {
-    if (ruleset !== "skirmish" || !draftComplete) return;
-    setSkirmishStage("battle");
+  function beginArenaBattle() {
+    if (ruleset !== "arena" || !draftComplete) return;
+    setArenaStage("battle");
   }
 
-  function applySkirmishSeed() {
+  function applyArenaSeed() {
     const nextSeed = seedInput.trim();
     if (!nextSeed) return;
     setMatchSeed(nextSeed);
-    setTerrain(generateSkirmishBattlefield(nextSeed).terrain);
+    setTerrain(generateArenaBattlefield(nextSeed).terrain);
     resetDraft(nextSeed);
-    setSkirmishStage("battlefield");
+    setArenaStage("battlefield");
     setSeedInput("");
     setSeedCopied(false);
     resetTo();
   }
 
-  async function copySkirmishSeed() {
+  async function copyArenaSeed() {
     if (!matchSeed || !navigator.clipboard) return;
     try {
       await navigator.clipboard.writeText(matchSeed);
@@ -2594,7 +2595,7 @@ export default function Home() {
   }
 
   function chooseDraftPiece(type: PieceType) {
-    if (ruleset !== "skirmish" || draftComplete || draftPickedType !== null) return;
+    if (ruleset !== "arena" || draftComplete || draftPickedType !== null) return;
     if (!currentDraftOffer?.includes(type)) return;
     const aiChoice = draftAiChoices[draftRound];
     if (!aiChoice) return;
@@ -2618,7 +2619,7 @@ export default function Home() {
   function changeFirstPlayer(nextChoice: FirstChoice) {
     setFirstChoice(nextChoice);
     setHumanPlayer(resolveHumanPlayer(nextChoice));
-    if (ruleset === "skirmish" && matchSeed) resetDraft(matchSeed);
+    if (ruleset === "arena" && matchSeed) resetDraft(matchSeed);
     resetTo();
   }
 
@@ -2753,10 +2754,10 @@ export default function Home() {
           : phase === "settling"
             ? `${t.header.settling} · ${t.header.round} ${Math.max(round, 1)} ${t.header.roundSuffix}`
             : activePuzzle!.title[lang]
-      : ruleset === "skirmish" && skirmishStage !== "battle"
-      ? skirmishStage === "battlefield"
+      : ruleset === "arena" && arenaStage !== "battle"
+      ? arenaStage === "battlefield"
         ? rulesetCopy.battlefield
-        : skirmishStage === "advanced-draft"
+        : arenaStage === "advanced-draft"
           ? rulesetCopy.advancedDraft
           : rulesetCopy.coreDraft
       : phase === "placement"
@@ -2774,8 +2775,8 @@ export default function Home() {
   const baseSubtitleText =
     puzzleActive
       ? activePuzzle!.lesson[lang]
-      : ruleset === "skirmish" && skirmishStage !== "battle"
-      ? rulesetCopy.skirmishDescription
+      : ruleset === "arena" && arenaStage !== "battle"
+      ? rulesetCopy.arenaDescription
       : phase === "placement"
       ? `${t.header.subPlacing} ${pieces.length}/${targetPiecesPerPlayer * 2}`
       : phase === "ready"
@@ -2795,7 +2796,7 @@ export default function Home() {
 
   return (
     <main
-      className={`game-shell theme-${colorTheme} mode-ai ruleset-${ruleset} phase-${phase} skirmish-stage-${skirmishStage} lang-${lang} collapse-${collapsePlaybackState} ${screen === "home" ? "screen-home" : ""} ${puzzleActive ? "puzzle-active" : ""} ${isReplaying ? "is-replaying" : ""}`}
+      className={`game-shell theme-${colorTheme} mode-ai ruleset-${ruleset} phase-${phase} arena-stage-${arenaStage} lang-${lang} collapse-${collapsePlaybackState} ${screen === "home" ? "screen-home" : ""} ${puzzleActive ? "puzzle-active" : ""} ${isReplaying ? "is-replaying" : ""}`}
       data-collapse-state={collapsePlaybackState}
       onPointerDown={(event) => {
         if (!inspectionActive || !(event.target instanceof Element)) return;
@@ -2824,8 +2825,8 @@ export default function Home() {
             title: t.title,
             classic: rulesetCopy.classic,
             classicDescription: rulesetCopy.classicDescription,
-            skirmish: rulesetCopy.skirmish,
-            skirmishDescription: rulesetCopy.skirmishDescription,
+            arena: rulesetCopy.arena,
+            arenaDescription: rulesetCopy.arenaDescription,
             puzzles: rulesetCopy.puzzles,
             puzzlesDescription: rulesetCopy.puzzlesDescription,
             settings: t.actions.settings,
@@ -2834,7 +2835,7 @@ export default function Home() {
           lang={lang}
           onLanguageChange={setLang}
           onChooseClassic={() => enterRuleset("classic")}
-          onChooseSkirmish={() => enterRuleset("skirmish")}
+          onChooseArena={() => enterRuleset("arena")}
           onChoosePuzzles={() => {
             if (window.history.state?.battleArrayLayer !== "game") {
               window.history.pushState({ battleArrayLayer: "game" }, "");
@@ -2970,9 +2971,9 @@ export default function Home() {
               ))}
             </div>
           )}
-          {!puzzleActive && ruleset === "skirmish" && skirmishStage !== "battle" ? (
-            <SkirmishStage
-              stage={skirmishStage}
+          {!puzzleActive && ruleset === "arena" && arenaStage !== "battle" ? (
+            <ArenaStage
+              stage={arenaStage}
               matchSeed={matchSeed}
               terrain={terrain}
               seedInput={seedInput}
@@ -2987,7 +2988,7 @@ export default function Home() {
               players={t.players}
               pieces={t.pieces}
               copy={{
-                skirmish: rulesetCopy.skirmish,
+                arena: rulesetCopy.arena,
                 battlefield: rulesetCopy.battlefield,
                 battlefieldIntro: rulesetCopy.battlefieldIntro,
                 seed: rulesetCopy.seed,
@@ -3010,11 +3011,11 @@ export default function Home() {
                 advancedUnavailable: rulesetCopy.advancedUnavailable,
               }}
               onSeedInputChange={setSeedInput}
-              onApplySeed={applySkirmishSeed}
-              onCopySeed={copySkirmishSeed}
-              onBeginDraft={beginSkirmishDraft}
+              onApplySeed={applyArenaSeed}
+              onCopySeed={copyArenaSeed}
+              onBeginDraft={beginArenaDraft}
               onChooseDraft={chooseDraftPiece}
-              onBeginBattle={beginSkirmishBattle}
+              onBeginBattle={beginArenaBattle}
             />
           ) : (
           <BattleBoard

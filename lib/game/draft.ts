@@ -20,7 +20,7 @@ export const DRAFT_TIER_SCHEDULE: readonly DraftTier[] = [
 
 export const DRAFT_POOLS: Record<DraftTier, readonly PieceType[]> = {
   core: ["guard", "scout", "archer", "knight", "shield", "halberd"],
-  advanced: ["cannon", "musket", "crossbow", "lancer", "sentry", "ram", "engineer"],
+  advanced: ["cannon", "musket", "crossbow", "lancer", "sentry", "ram", "mason"],
   elite: ["fortress", "selector", "charger"],
 };
 
@@ -42,12 +42,12 @@ function isValidOffer(offer: DraftOffer, previous: DraftOffer | undefined) {
 export function generateDraftOffers(seed: string, rounds = DRAFT_TIER_SCHEDULE.length): DraftOffer[] {
   const random = createSeededRandom(deriveSeed(seed, "draft"));
   const offers: DraftOffer[] = [];
-  let engineerOffered = false;
+  let masonOffered = false;
 
   for (let round = 0; round < rounds; round += 1) {
     const tierPool = DRAFT_POOLS[getDraftTier(round)];
-    const pool = engineerOffered
-      ? tierPool.filter((type) => type !== "engineer")
+    const pool = masonOffered
+      ? tierPool.filter((type) => type !== "mason")
       : tierPool;
     let offer: DraftOffer | null = null;
     for (let attempt = 0; attempt < 100 && !offer; attempt += 1) {
@@ -59,7 +59,7 @@ export function generateDraftOffers(seed: string, rounds = DRAFT_TIER_SCHEDULE.l
       offer = pool.slice(0, 3) as DraftOffer;
     }
     offers.push(offer);
-    if (offer.includes("engineer")) engineerOffered = true;
+    if (offer.includes("mason")) masonOffered = true;
   }
 
   return offers;

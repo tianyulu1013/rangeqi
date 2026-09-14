@@ -79,7 +79,7 @@ export const PIECE_CONFIG: Record<
     count: 0,
     offsets: [],
   },
-  engineer: {
+  mason: {
     count: 0,
     offsets: [],
   },
@@ -125,7 +125,7 @@ export const PIECE_TYPES: PieceType[] = [
   "selector",
   "ram",
   "sentry",
-  "engineer",
+  "mason",
   "knight",
   "fortress",
 ];

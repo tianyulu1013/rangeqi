@@ -4,8 +4,8 @@ type HomeScreenCopy = {
   title: string;
   classic: string;
   classicDescription: string;
-  skirmish: string;
-  skirmishDescription: string;
+  arena: string;
+  arenaDescription: string;
   puzzles: string;
   puzzlesDescription: string;
   settings: string;
@@ -17,7 +17,7 @@ export function HomeScreen({
   lang,
   onLanguageChange,
   onChooseClassic,
-  onChooseSkirmish,
+  onChooseArena,
   onChoosePuzzles,
   onChooseMusketTest,
   onChoosePuzzleGenerator,
@@ -29,7 +29,7 @@ export function HomeScreen({
   lang: Language;
   onLanguageChange: (lang: Language) => void;
   onChooseClassic: () => void;
-  onChooseSkirmish: () => void;
+  onChooseArena: () => void;
   onChoosePuzzles: () => void;
   onChooseMusketTest: () => void;
   onChoosePuzzleGenerator: () => void;
@@ -53,11 +53,11 @@ export function HomeScreen({
           </span>
           <span className="home-mode-arrow" aria-hidden="true">↗</span>
         </button>
-        <button type="button" className="home-mode-card skirmish" onClick={onChooseSkirmish}>
+        <button type="button" className="home-mode-card arena" onClick={onChooseArena}>
           <span className="home-mode-number">02</span>
           <span className="home-mode-copy">
-            <strong>{copy.skirmish}</strong>
-            <span>{copy.skirmishDescription}</span>
+            <strong>{copy.arena}</strong>
+            <span>{copy.arenaDescription}</span>
           </span>
           <span className="home-mode-arrow" aria-hidden="true">↗</span>
         </button>
