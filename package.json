@@ -8,14 +8,21 @@
   "scripts": {
     "dev": "vinext dev",
     "build": "vinext build",
-    "build:static": "vite build --config static-site/vite.config.ts",
+    "build:static": "vite build --mode public --config static-site/vite.config.ts",
     "postbuild:static": "node static-site/sync-root.mjs",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test:rules": "node --experimental-strip-types --test tests/game-rules.test.mjs",
+    "generate:puzzles": "node --experimental-strip-types scripts/generate-puzzles.ts",
+    "test": "npm run build && npm run test:rules && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "android:sync": "npm run build:static && cap sync android",
+    "android:apk": "npm run android:sync && cd android && set \"JAVA_HOME=C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\" && set \"ANDROID_HOME=C:\\Users\\biaaa\\AppData\\Local\\Android\\Sdk\" && gradlew.bat assembleDebug"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.0",
     "drizzle-orm": "0.45.2",
     "next": "16.2.6",
     "react": "19.2.6",
@@ -23,6 +30,7 @@
     "react-icons": "^5.5.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
     "@cloudflare/vite-plugin": "1.37.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",

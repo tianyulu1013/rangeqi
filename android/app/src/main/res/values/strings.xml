@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Battle Array: Collapse</string>
+    <string name="title_activity_main">Battle Array: Collapse</string>
+    <string name="package_name">com.rangeqi.game</string>
+    <string name="custom_url_scheme">com.rangeqi.game</string>
+</resources>

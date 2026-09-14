@@ -1,0 +1,200 @@
+{
+  "format": "battle-array-puzzle",
+  "version": 1,
+  "exportedAt": "2026-09-14T04:06:20.720Z",
+  "settings": {
+    "seed": "COLLAPSE-GALLERY-V1",
+    "minHandSize": 4,
+    "maxHandSize": 7,
+    "minRounds": 3,
+    "theme": "mixed"
+  },
+  "puzzle": {
+    "id": "generated-formation-collapse-gallery-v1:batch-2-2",
+    "number": 3,
+    "title": {
+      "en": "Break the Formation",
+      "zh": "破阵"
+    },
+    "lesson": {
+      "en": "Read the open formation and build your own answer.",
+      "zh": "观察自由敌阵，构筑自己的破阵方案。"
+    },
+    "player": "blue",
+    "enemy": "red",
+    "pieces": [
+      {
+        "id": 201,
+        "player": "red",
+        "type": "knight",
+        "row": 5,
+        "col": 4
+      },
+      {
+        "id": 202,
+        "player": "red",
+        "type": "crossbow",
+        "row": 5,
+        "col": 5
+      },
+      {
+        "id": 203,
+        "player": "red",
+        "type": "fortress",
+        "row": 4,
+        "col": 6
+      },
+      {
+        "id": 204,
+        "player": "red",
+        "type": "knight",
+        "row": 6,
+        "col": 5
+      },
+      {
+        "id": 205,
+        "player": "red",
+        "type": "scout",
+        "row": 6,
+        "col": 6
+      },
+      {
+        "id": 206,
+        "player": "red",
+        "type": "cannon",
+        "row": 5,
+        "col": 6
+      },
+      {
+        "id": 207,
+        "player": "red",
+        "type": "shield",
+        "row": 4,
+        "col": 5,
+        "direction": "down"
+      },
+      {
+        "id": 208,
+        "player": "red",
+        "type": "halberd",
+        "row": 4,
+        "col": 4,
+        "direction": "down"
+      }
+    ],
+    "terrain": [
+      {
+        "row": 4,
+        "col": 2,
+        "type": "fence"
+      }
+    ],
+    "hand": [
+      {
+        "player": "blue",
+        "type": "musket",
+        "count": 2
+      },
+      {
+        "player": "blue",
+        "type": "lancer",
+        "count": 1
+      },
+      {
+        "player": "blue",
+        "type": "cannon",
+        "count": 1
+      },
+      {
+        "player": "blue",
+        "type": "shield",
+        "count": 1
+      },
+      {
+        "player": "blue",
+        "type": "selector",
+        "count": 1
+      }
+    ],
+    "goal": {
+      "type": "eliminate-all-enemies",
+      "minFriendlySurvivors": 1
+    },
+    "generation": {
+      "seed": "COLLAPSE-GALLERY-V1:batch-2:themed-formation-2",
+      "theme": "freeform",
+      "themeTitle": {
+        "en": "Free Formation",
+        "zh": "自由阵"
+      },
+      "enemyFormationSize": 8,
+      "handSize": 6,
+      "essentialPieces": 6,
+      "knownSolution": [
+        {
+          "player": "blue",
+          "type": "musket",
+          "row": 6,
+          "col": 3,
+          "direction": "right"
+        },
+        {
+          "player": "blue",
+          "type": "lancer",
+          "row": 6,
+          "col": 4
+        },
+        {
+          "player": "blue",
+          "type": "cannon",
+          "row": 4,
+          "col": 1
+        },
+        {
+          "player": "blue",
+          "type": "shield",
+          "row": 3,
+          "col": 5,
+          "direction": "down"
+        },
+        {
+          "player": "blue",
+          "type": "selector",
+          "row": 2,
+          "col": 4,
+          "targets": [
+            [
+              4,
+              6
+            ],
+            [
+              4,
+              4
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              3,
+              5
+            ]
+          ]
+        },
+        {
+          "player": "blue",
+          "type": "musket",
+          "row": 5,
+          "col": 2,
+          "direction": "right"
+        }
+      ],
+      "sampledAttempts": 120,
+      "sampledWins": 0,
+      "estimatedWinRate": 0,
+      "collapseRounds": 6,
+      "score": 385,
+      "downgradedPieces": 0
+    }
+  }
+}

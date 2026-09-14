@@ -36,6 +36,7 @@ yarn-error.log*
 
 # typescript
 next-env.d.ts
+*.tsbuildinfo
 /dist/
 /.wrangler/
 /outputs/
@@ -43,3 +44,14 @@ next-env.d.ts
 /.npm-cache/
 /dev-server.log
 /dev-server.err.log
+
+# Android and Capacitor generated files
+/android/.gradle/
+/android/**/.gradle/
+/android/**/build/
+/android/**/local.properties
+*.apk
+*.aab
+*.jks
+*.keystore
+keystore.properties

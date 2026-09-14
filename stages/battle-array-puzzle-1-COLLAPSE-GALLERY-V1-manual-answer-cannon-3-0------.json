@@ -1,0 +1,100 @@
+{
+  "format": "battle-array-puzzle",
+  "version": 1,
+  "exportedAt": "2026-09-14T04:49:08.495Z",
+  "settings": {
+    "seed": "COLLAPSE-GALLERY-V1",
+    "minHandSize": 4,
+    "maxHandSize": 8,
+    "minRounds": 3,
+    "theme": "mixed"
+  },
+  "puzzle": {
+    "id": "manual-collapse-gallery-v1:manual-answer:cannon:3:0:-:-:-",
+    "number": 1,
+    "title": {
+      "en": "Designed Puzzle",
+      "zh": "自设计关卡"
+    },
+    "lesson": {
+      "en": "Break the formation with the designed answer.",
+      "zh": "按照设计好的解法破解阵型。"
+    },
+    "player": "blue",
+    "enemy": "red",
+    "pieces": [
+      {
+        "id": 1,
+        "player": "red",
+        "type": "scout",
+        "row": 3,
+        "col": 3
+      },
+      {
+        "id": 2,
+        "player": "red",
+        "type": "scout",
+        "row": 3,
+        "col": 4
+      },
+      {
+        "id": 3,
+        "player": "red",
+        "type": "guard",
+        "row": 3,
+        "col": 2
+      },
+      {
+        "id": 4,
+        "player": "red",
+        "type": "shield",
+        "row": 3,
+        "col": 5,
+        "direction": "right"
+      }
+    ],
+    "terrain": [
+      {
+        "row": 3,
+        "col": 1,
+        "type": "fence"
+      }
+    ],
+    "hand": [
+      {
+        "player": "blue",
+        "type": "cannon",
+        "count": 1
+      }
+    ],
+    "goal": {
+      "type": "eliminate-all-enemies",
+      "minFriendlySurvivors": 1,
+      "protectedPieceIds": []
+    },
+    "generation": {
+      "seed": "COLLAPSE-GALLERY-V1:manual-answer:cannon:3:0:-:-:-",
+      "theme": "freeform",
+      "themeTitle": {
+        "en": "Designed answer",
+        "zh": "自设计答案"
+      },
+      "enemyFormationSize": 4,
+      "handSize": 1,
+      "essentialPieces": 1,
+      "knownSolution": [
+        {
+          "player": "blue",
+          "type": "cannon",
+          "row": 3,
+          "col": 0
+        }
+      ],
+      "sampledAttempts": 0,
+      "sampledWins": 0,
+      "estimatedWinRate": 0,
+      "collapseRounds": 4,
+      "score": 138
+    }
+  }
+}

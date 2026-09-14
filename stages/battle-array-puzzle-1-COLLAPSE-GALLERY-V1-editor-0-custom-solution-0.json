@@ -1,0 +1,233 @@
+{
+  "format": "battle-array-puzzle",
+  "version": 1,
+  "exportedAt": "2026-09-14T03:40:31.376Z",
+  "settings": {
+    "seed": "COLLAPSE-GALLERY-V1",
+    "minHandSize": 4,
+    "maxHandSize": 7,
+    "minRounds": 3,
+    "theme": "mixed"
+  },
+  "puzzle": {
+    "id": "custom-collapse-gallery-v1:editor-0-0",
+    "number": 1,
+    "title": {
+      "en": "Custom Formation",
+      "zh": "自定义敌阵"
+    },
+    "lesson": {
+      "en": "Find a way to peel apart the formation.",
+      "zh": "寻找薄弱点，让敌阵逐层剥落。"
+    },
+    "player": "blue",
+    "enemy": "red",
+    "pieces": [
+      {
+        "id": 1,
+        "player": "red",
+        "type": "guard",
+        "row": 3,
+        "col": 2
+      },
+      {
+        "id": 2,
+        "player": "red",
+        "type": "archer",
+        "row": 2,
+        "col": 3
+      },
+      {
+        "id": 3,
+        "player": "red",
+        "type": "archer",
+        "row": 4,
+        "col": 3
+      },
+      {
+        "id": 4,
+        "player": "red",
+        "type": "knight",
+        "row": 2,
+        "col": 4
+      },
+      {
+        "id": 5,
+        "player": "red",
+        "type": "lancer",
+        "row": 4,
+        "col": 4
+      },
+      {
+        "id": 6,
+        "player": "red",
+        "type": "fortress",
+        "row": 3,
+        "col": 4
+      },
+      {
+        "id": 7,
+        "player": "red",
+        "type": "crossbow",
+        "row": 3,
+        "col": 3
+      }
+    ],
+    "terrain": [
+      {
+        "row": 1,
+        "col": 2,
+        "type": "fence"
+      },
+      {
+        "row": 1,
+        "col": 3,
+        "type": "fence"
+      },
+      {
+        "row": 1,
+        "col": 4,
+        "type": "fence"
+      },
+      {
+        "row": 1,
+        "col": 5,
+        "type": "fence"
+      },
+      {
+        "row": 5,
+        "col": 2,
+        "type": "fence"
+      },
+      {
+        "row": 5,
+        "col": 3,
+        "type": "fence"
+      },
+      {
+        "row": 5,
+        "col": 4,
+        "type": "fence"
+      },
+      {
+        "row": 5,
+        "col": 5,
+        "type": "fence"
+      },
+      {
+        "row": 2,
+        "col": 2,
+        "type": "fence"
+      },
+      {
+        "row": 4,
+        "col": 2,
+        "type": "fence"
+      },
+      {
+        "row": 2,
+        "col": 5,
+        "type": "fence"
+      },
+      {
+        "row": 4,
+        "col": 5,
+        "type": "fence"
+      },
+      {
+        "row": 3,
+        "col": 5,
+        "type": "fence"
+      }
+    ],
+    "hand": [
+      {
+        "player": "blue",
+        "type": "charger",
+        "count": 2
+      },
+      {
+        "player": "blue",
+        "type": "musket",
+        "count": 1
+      },
+      {
+        "player": "blue",
+        "type": "knight",
+        "count": 3
+      },
+      {
+        "player": "blue",
+        "type": "cannon",
+        "count": 1
+      }
+    ],
+    "goal": {
+      "type": "eliminate-all-enemies",
+      "minFriendlySurvivors": 1
+    },
+    "generation": {
+      "seed": "COLLAPSE-GALLERY-V1:editor-0:custom-solution-0",
+      "theme": "freeform",
+      "themeTitle": {
+        "en": "Candidate 1",
+        "zh": "候选解 1"
+      },
+      "enemyFormationSize": 7,
+      "handSize": 7,
+      "essentialPieces": 6,
+      "knownSolution": [
+        {
+          "player": "blue",
+          "type": "charger",
+          "row": 3,
+          "col": 1,
+          "direction": "right"
+        },
+        {
+          "player": "blue",
+          "type": "musket",
+          "row": 3,
+          "col": 0,
+          "direction": "right"
+        },
+        {
+          "player": "blue",
+          "type": "knight",
+          "row": 2,
+          "col": 0
+        },
+        {
+          "player": "blue",
+          "type": "charger",
+          "row": 0,
+          "col": 4,
+          "direction": "down"
+        },
+        {
+          "player": "blue",
+          "type": "knight",
+          "row": 5,
+          "col": 6
+        },
+        {
+          "player": "blue",
+          "type": "knight",
+          "row": 5,
+          "col": 1
+        },
+        {
+          "player": "blue",
+          "type": "cannon",
+          "row": 6,
+          "col": 3
+        }
+      ],
+      "sampledAttempts": 0,
+      "sampledWins": 0,
+      "estimatedWinRate": 0,
+      "collapseRounds": 6,
+      "score": 323
+    }
+  }
+}
