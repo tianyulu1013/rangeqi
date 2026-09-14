@@ -6,7 +6,7 @@ import { defineConfig } from "vite";
 const staticRoot = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(staticRoot, "..");
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   root: staticRoot,
   base: "./",
   plugins: [react()],
@@ -14,7 +14,7 @@ export default defineConfig({
     postcss: resolve(projectRoot, "postcss.config.mjs"),
   },
   build: {
-    outDir: resolve(projectRoot, "docs"),
+    outDir: resolve(projectRoot, mode === "app" ? "android-web" : "docs"),
     emptyOutDir: true,
   },
-});
+}));

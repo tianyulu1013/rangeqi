@@ -9,6 +9,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "build:static": "vite build --mode public --config static-site/vite.config.ts",
+    "build:app": "vite build --mode app --config static-site/vite.config.ts",
     "postbuild:static": "node static-site/sync-root.mjs",
     "start": "vinext start",
     "test:rules": "node --experimental-strip-types --test tests/game-rules.test.mjs",
@@ -16,7 +17,7 @@
     "test": "npm run build && npm run test:rules && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
-    "android:sync": "npm run build:static && cap sync android",
+    "android:sync": "npm run build:app && cap sync android",
     "android:apk": "npm run android:sync && cd android && set \"JAVA_HOME=C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\" && set \"ANDROID_HOME=C:\\Users\\biaaa\\AppData\\Local\\Android\\Sdk\" && gradlew.bat assembleDebug"
   },
   "dependencies": {

@@ -44,6 +44,7 @@ next-env.d.ts
 /.npm-cache/
 /dev-server.log
 /dev-server.err.log
+/android-web/
 
 # Android and Capacitor generated files
 /android/.gradle/
